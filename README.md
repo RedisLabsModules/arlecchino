@@ -1,4 +1,4 @@
-<img src="https://oss.redislabs.com/RedisLabsModules/arlecchino/docs/arlecchino.webp" alt="logo" width="300"/>
+<img src="https://raw.githubusercontent.com/RedisLabsModules/arlecchino/master/docs/arlecchino.webp?token=ABZG4O43MS5HFPTHH2G3S4DBA77H2" alt="logo" width="300"/>
 
 # Arlecchino
 

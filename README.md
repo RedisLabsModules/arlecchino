@@ -1,6 +1,4 @@
-![](docs/arlecchino.webp) 
-
-<img src="W:\rafi_3\arlecchino\docs\rlecchino.webp" alt="rlecchino" style="zoom:33%;" />
+<img src="https://oss.redislabs.com/RedisLabsModules/arlecchino/docs/arlecchino.webp" alt="logo" width="300"/>
 
 # Arlecchino
 

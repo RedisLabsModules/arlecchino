@@ -1,0 +1,12 @@
+#!/bin/bash
+
+SERVICE=${SERVICE:-$1}
+[[ -z $SERVICE ]] && exit 0
+
+SEC=${SEC:-5}
+
+while [[ $(( SECONDS < SEC )) == 1 ]]; do
+	[[ -e /var/opt/redislabs/run/$SERVICE.sock ]] && exit 0
+	sleep 0.5
+done
+exit 1

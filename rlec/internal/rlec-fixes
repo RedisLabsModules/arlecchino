@@ -1,0 +1,67 @@
+#!/bin/bash
+
+umask 002
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+view=$(realpath $HERE/../../..)
+
+ln -sf $view /opt/view
+
+if [[ -e /opt/view/rlec/NOPATCH ]]; then
+	NO_PATCH=1
+fi
+
+if [[ $NO_PATCH != 1 && -d /opt/view/modullaneous/rlec-docker/cnm-$CNM_VER ]]; then
+	echo "Patching CNM..."
+	/opt/redislabs/bin/python $HERE/sync-cnm.py cnm-$CNM_VER
+
+	echo "Waiting for services..."
+	$HERE/wait-for-service rlec_supervisord
+	echo "Restarting services..."
+	supervisorctl restart cnm_exec
+	supervisorctl restart cnm_http
+	supervisorctl restart cm_server
+	echo "Waiting for services..."
+	$HERE/wait-for-service rlec_supervisord
+	[[ $NO_INTERNET != 1 ]] && sleep 5
+fi
+
+[[ $NO_INTERNET == 1 ]] && exit 0
+
+if [[ ! -z $(command -v apt-get) ]]; then
+	echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
+fi
+
+if [[ -e /opt/view/rlec/DEBUG ]]; then
+	export PYTHONWARNINGS='ignore:DEPRECATION::pip._internal.cli.base_command'
+	if [[ ! -z $(command -v apt-get) ]]; then
+		apt-get -qq install -o=Dpkg::Use-Pty=0 -y jq ca-certificates 2>&1 > /tmp/install.log
+		[[ $? != 0 ]] && cat /tmp/install.log
+	else
+		yum install -q -y jq ca-certificates 2>&1 > /tmp/install.log
+		[[ $? != 0 ]] && cat /tmp/install.log
+	fi
+
+	curl -s https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
+	/opt/redislabs/bin/python /tmp/get-pip.py -q
+	/opt/redislabs/bin/python -m pip install -q yq
+	# wget -O /opt/redislabs/bin/yq https://github.com/mikefarah/yq/releases/download/3.1.1/yq_linux_amd64
+	# chmod +x /opt/redislabs/bin/yq 
+
+	echo "Debugging is enalbed: installing stuff..."
+	if [[ ! -z $(command -v apt-get) ]]; then
+		apt-get -qq update
+		apt-get -qq install -y mc htop tmux 2>&1 > /tmp/apt.log
+	else
+		yum -q install -y mc htop tmux 2>&1 > /tmp/install.log
+	fi
+	[[ $? != 0 ]] && cat /tmp/apt.log
+fi
+
+echo "Installing packages..."
+if [[ ! -z $(command -v apt-get) ]]; then
+	echo ""
+	# apt-get -qq install -y mc htop tmux 2>&1 > /tmp/apt.log
+else
+	yum -q install -y mc htop tmux 2>&1 > /tmp/install.log
+fi

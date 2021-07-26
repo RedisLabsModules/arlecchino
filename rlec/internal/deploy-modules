@@ -1,0 +1,17 @@
+#!/bin/bash
+
+umask 002
+
+if [[ -f /opt/view/rlec/S3 ]]; then
+	YAML=s3-redis-modules.yaml
+else
+	YAML=redis-modules.yaml
+fi
+
+[[ -f /opt/view/rlec/NOMODULES ]] && { echo "Skipping modules installation." ; exit 0; }
+[[ ! -f /opt/view/rlec/$YAML ]] && { echo "No modules specified." ; exit 0; }
+
+# rm -f /opt/redislabs/lib/modules/*
+
+echo "Installing modules..."
+/opt/redislabs/bin/python /opt/view/modullaneous/rlec-mod-install/install-modules.py --yaml /opt/view/rlec/$YAML --modinfo /opt/view/rlec/modules.json

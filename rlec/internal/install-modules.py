@@ -20,12 +20,8 @@ import tempfile
 import subprocess
 from textwrap import dedent
 
-# for debugging from within arlecchino
-try:
-    sys.path.insert(0, "/opt/view/readies")
-    import paella
-except:
-    pass
+sys.path.insert(0, "/opt/readies")
+import paella
 
 #----------------------------------------------------------------------------------------------
 

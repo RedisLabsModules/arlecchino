@@ -7,17 +7,12 @@ import json
 
 from rlec_auto import *
 
-sys.path.insert(0, "/opt/view/readies")
+sys.path.insert(0, "/opt/readies")
 import paella
 
 parser = argparse.ArgumentParser(description='Add RLEC node')
 parser.add_argument('--dict', action="store_true", help='Reply with dict for single key query')
 parser.add_argument('keys', type=str, action='store', nargs="+", help='Query keys') 
-
-# parser.add_argument('--bool', action="store_true", help="flag")
-# parser.add_argument('--int', type=int, default=1, help='number') 
-# parser.add_argument('--str', type=str, default='str', help='number')
-BB()
 args = parser.parse_args()
 
 info = Info()

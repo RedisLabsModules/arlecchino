@@ -13,7 +13,7 @@ import requests
 
 from rlec_auto import *
 
-sys.path.insert(0, "/opt/view/arlecchino/readies")
+sys.path.insert(0, "/opt/readies")
 import paella
 
 #----------------------------------------------------------------------------------------------
@@ -27,10 +27,6 @@ parser.add_argument('--sparse', action="store_true", help="Sparse shard placemen
 parser.add_argument('--replication', action="store_true", help="Enable replication")
 parser.add_argument('--no-modules', action="store_true", help="Do not install modules")
 parser.add_argument('--verbose', action="store_true", help='Show output of all commands')
-
-# parser.add_argument('--bool', action="store_true", help="flag")
-# parser.add_argument('--int', type=int, default=1, help='number') 
-# parser.add_argument('--str', type=str, default='str', help='number') 
 args = parser.parse_args()
 
 #----------------------------------------------------------------------------------------------
@@ -45,7 +41,6 @@ class Database:
 
 #----------------------------------------------------------------------------------------------
 
-BB()
 print("\nCreating database...")
 
 if args.shards > 1:
@@ -92,13 +87,13 @@ fields_t = r'''
 "shard_key_regex": [ { "regex": ".*\\{(?<tag>.*)\\}.*" }, { "regex": "(?<tag>.*)" } ],
 "replication": {{replication}},
 "shards_placement": "{{shards_placement}}",
-"bigstore": true,
 "proxy_policy": "all-nodes",
 "bigstore_ram_size": 536870912,
 "hash_slots_policy": "16k"
 '''
 
 
+# "bigstore": true,
 # "port": 16379,
 # "oss_cluster": false,
 # "proxy_policy": "single",

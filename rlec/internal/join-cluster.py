@@ -25,6 +25,7 @@ def try_join(master_ip):
     except subprocess.CalledProcessError as x:
         return False
 
+BB()
 master_ip = sys.argv[1]
 print("Joining cluster...")
 for i in range(3):

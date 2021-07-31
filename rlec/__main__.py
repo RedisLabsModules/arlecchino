@@ -5,6 +5,8 @@ import sys
 import collections
 import click
 from textwrap import dedent
+import time
+import datetime
 from rlec_docker import *
 
 HERE = os.path.dirname(__file__)
@@ -14,6 +16,13 @@ sys.path.insert(0, READIES)
 import paella
 
 VERSION = '1.0.0'
+
+#----------------------------------------------------------------------------------------------
+
+T0 = time.monotonic()
+
+def report_elapsed():
+    print(f"Elapsed: {datetime.timedelta(seconds=time.monotonic() - T0)}")
 
 #----------------------------------------------------------------------------------------------
 
@@ -28,7 +37,7 @@ class Group1(click.Group):
              @-.
            _  )\\  _
           / \/ | \/ \
-         @/`|/\/\/|`\@    Arlecchino v1.0
+         @/`|/\/\/|`\@    Arlecchino v{VERSION}
             /~~~~~\
            |  ^ ^  |      Redis Labs Enterprise Cluster
            |   .   |      on Docker
@@ -39,7 +48,7 @@ class Group1(click.Group):
          @`   \ /   `@
                @
 
-'''
+'''.format(VERSION=VERSION)
 
     @staticmethod
     def footer():
@@ -75,38 +84,42 @@ redis-modules.yaml  Redis modules for installation
 Output files:
 RLEC      Docker ID of master node
 db1.yaml  Database attributes
-	
+
 Variables:
 RLEC         Root of RLEC view
 DOCKER_HOST  Host running Docker server (localhost if undefined)
 
 '''
-    
+
     def get_help(self, ctx):
         h = super().get_help(ctx)
         return Command1.header() + h + Command1.footer()
 
 #----------------------------------------------------------------------------------------------
 
-@click.group(cls=Group1, name="rlec")
+@click.group(cls=Group1, name="rlec", invoke_without_command=True)
 @click.option('--debug', is_flag=True, help='Invoke debugger')
 @click.option('--verbose', is_flag=True, help='Show output of all commands')
 @click.option('--version', is_flag=True, help='Show version')
 def main(debug, verbose, version):
     if version:
-        print(VERSION)
+        print(f"Arlecchino {VERSION}")
         exit(0)
 
 #----------------------------------------------------------------------------------------------
 
 @main.command(help='Start RLEC cluster', cls=Command1)
-@click.option('--os', type=str, default=None, help='platform ({osnick}-{version})')
+@click.option('-o', '--os', 'osnick', type=str, default=None, help='RLEC osnick')
+@click.option('-v', '--version', type=str, default=None, help='RLEC version')
+@click.option('-b', '--build', type=str, default=None, help='RLEC build')
+@click.option('-i', '--internal', is_flag=True, default=None, help='Use RLEC internal builds')
 @click.option('-n', '--nodes', type=int, default=1, help='Number of nodes')
 @click.option('-s', '--shards', type=int, default=3, help='Number of shards')
 @click.option('-d', '--name', type=str, default='db1', help='Database name')
 @click.option('-m', '--memory', type=str, default='1g', help='Memory (RAM)')
 @click.option('--sparse', is_flag=True, help="Use sparse shard placement")
 @click.option('--replication', is_flag=True, help="Enable replication")
+@click.option('-M', '--module', 'modules', type=str, multiple=True, help='Install module from redis-modules.yaml')
 @click.option('--no-bootstrap', is_flag=True, help='Do no bootstrap')
 @click.option('--no-patch', is_flag=True, help='Do not apply patches')
 @click.option('--no-db', is_flag=True, help='Do not create database')
@@ -114,24 +127,22 @@ def main(debug, verbose, version):
 @click.option('--no-internet', is_flag=True, help='No internet access')
 @click.option('--quick', is_flag=True, help='Skip package installation')
 @click.option('-k', '--keep', is_flag=True, help='Do not remove failing nodes')
-@click.option('--show-platforms', is_flag=True, help='Show RLEC platforms')
+# @click.option('--show-platforms', is_flag=True, help='Show RLEC platforms')
 @click.option('--verbose', is_flag=True, help='Show output of all commands')
 @click.option('--slow', is_flag=True, help='Do not run in parallel')
 @click.option('--debug', is_flag=True, help='Enable debug mode')
-def start(os, nodes, shards, name, memory, sparse, replication, no_bootstrap, no_patch, no_db,
-          no_modules, no_internet, quick, keep, show_platforms, verbose, slow, debug):
+def start(osnick, version, build, internal, nodes, shards, name, memory, sparse, replication, modules,
+          no_bootstrap, no_patch, no_db, no_modules, no_internet,
+          quick, keep, verbose, slow, debug):
     if verbose:
         ENV['VERBOSE'] = "1"
-    BB()
-    rlec = RLEC(docker_os=os)
-    if show_platforms:
-        rlec.show_osnicks()
-        exit(0)
+    rlec = RLEC(osnick=osnick, version=version, build=build, internal=internal)
     if rlec.is_running():
         print("RLEC docker already running.")
         exit(1)
-    print(f"Using {rlec.docker_os}")
-    rlec.create_cluster(no_modules=True, no_internet=no_internet, no_patch=no_patch, 
+    print(f"Using {rlec.docker_image}")
+    BB()
+    rlec.create_cluster(no_modules=True, no_internet=no_internet, no_patch=no_patch,
                         no_bootstrap=no_bootstrap, keep=keep, debug=debug)
     if not no_bootstrap:
         if nodes > 1:
@@ -141,7 +152,8 @@ def start(os, nodes, shards, name, memory, sparse, replication, no_bootstrap, no
         if not no_db:
             rlec.create_db(name=name, shards=shards, memory=memory, sparse=sparse, replication=replication)
     rlec.fetch_logs()  # TODO: call fetch_logs after each operation, internally
-    exit(0) 
+    report_elapsed()
+    exit(0)
 
 #----------------------------------------------------------------------------------------------
 
@@ -152,6 +164,7 @@ def stop():
         print("RLEC docker not running.")
         exit(1)
     rlec.stop_cluster()
+    report_elapsed()
     exit(0)
 
 #----------------------------------------------------------------------------------------------
@@ -173,8 +186,14 @@ def status(admin):
 #----------------------------------------------------------------------------------------------
 
 @main.command(help='Run rladmin')
-def admin():
-    click.echo("rladmin...")
+def admin(*args):
+    rlec = RLEC()
+    if not rlec.is_running():
+        print("RLEC docker is not running.")
+        exit(1)
+    node = rlec.main_node()
+    os.system(f"docker exec -u 0 -it {node.cid} bash -c rladmin")
+    exit(0)
 
 #----------------------------------------------------------------------------------------------
 
@@ -203,13 +222,15 @@ def shell(node, command, args):
         rc = os.system(f"docker exec -u 0 -it {node.cid} bash --init-file /opt/view/rlec/sh-init.{node.num}")
     else:
         rc = rlec.exec(' '.join(command), num=node.num, to_log=False, to_con=True)
-    exit(rc) 
+    exit(rc)
 
 #----------------------------------------------------------------------------------------------
 
 @main.command(help='Run tmux')
 def tmux():
     click.echo("tmux...")
+
+#----------------------------------------------------------------------------------------------
 
 @main.command(help='Invoke redis-cli in RLEC', cls=Command1)
 @click.option('-n', '--node', type=int, default=1, help='Node number')
@@ -231,7 +252,10 @@ def logs():
 #----------------------------------------------------------------------------------------------
 
 @main.command(name="node+", help='Add RLEC node', cls=Command1)
-@click.option('--os', type=str, default=None, help='platform ({osnick}-{version})')
+@click.option('--os', 'os_', type=str, default=None, help='RLEC OS')
+@click.option('-v', '--version', type=str, default=None, help='RLEC version')
+@click.option('-b', '--build', type=str, default=None, help='RLEC build')
+@click.option('-i', '--internal', is_flag=True, default=None, help='Use RLEC internal builds')
 @click.option('-m', '--memory', type=str, default='1g', help='Memory (RAM)')
 @click.option('--join / --no-join', default=True, help='Join existing nodes')
 @click.option('--patch / --no-patch', default=True, help='Do not apply patches')
@@ -239,9 +263,8 @@ def logs():
 @click.option('--slow', is_flag=True, help='Do not run in parallel')
 @click.option('--reshard', is_flag=True, help='Reshard after adding nodes')
 @click.argument('node-nums', type=int, nargs=-1)#, help='Node numbers')
-def add_node(os, memory, join, patch, verbose, slow, reshard, node_nums):
-    BB()
-    rlec = RLEC(docker_os=os)
+def add_node(os_, version, build, internal, memory, join, patch, verbose, slow, reshard, node_nums):
+    rlec = RLEC(os_=os_, version=version, build=build, internal=internal)
     if not rlec.is_running():
         print("RLEC docker is not running.")
         exit(1)
@@ -267,9 +290,9 @@ def rm_node():
 #----------------------------------------------------------------------------------------------
 
 @main.command(help='Create a database', cls=Command1)
-@click.option('-n', '--name', type=str, default='db1', help='Name of database') 
-@click.option('-m', '--memory', type=str, default='1g', help='Amount of RAM (default: 1g/1024m)') 
-@click.option('-s', '--shards', type=int, default=1, help='Number of shards') 
+@click.option('-n', '--name', type=str, default='db1', help='Name of database')
+@click.option('-m', '--memory', type=str, default='1g', help='Amount of RAM (default: 1g/1024m)')
+@click.option('-s', '--shards', type=int, default=1, help='Number of shards')
 @click.option('-f', '--filename', type=str, default='db1.yaml', help='Database parameters filename')
 @click.option('--sparse', is_flag=True, help="Sparse shard placement")
 @click.option('--replication', is_flag=True, help="Enable replication")
@@ -285,6 +308,8 @@ def create_db(*args, **kwargs):
         exit(1)
     _args = ''
     for k, v in kwargs.items():
+        if k == 'debug':
+            continue
         k = k.replace('_', '-')
         if type(v) == str:
             _args += f' --{k} "{v}"'
@@ -299,7 +324,7 @@ def create_db(*args, **kwargs):
     verbose = kwargs['verbose']
     debug = kwargs['debug']
     node = Node(num=1)
-    return os.system(f"docker exec -u 0 -it {node.cid} bash -c \"{'BB=1' if debug else ''} /opt/view/arlecchino/rlec/internal/create-db.py {_args}\"")
+    return os.system(f"docker exec -u 0 -it {node.cid} bash -c \"{'BB=pudb' if debug else ''} /opt/view/arlecchino/rlec/internal/create-db.py {_args}\"")
 
 #----------------------------------------------------------------------------------------------
 

@@ -1,0 +1,40 @@
+#!/bin/bash
+
+set -e
+HERE="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" >/dev/null 2>&1 && pwd)"
+READIES=$(cd $HERE/../readies && pwd)
+. $READIES/shibumi/defs
+
+find_rlec() {
+	d="$1"
+	path_pattern="$2"
+	while true; do
+		if [[ $d == / ]]; then
+			echo ""
+			return 0
+		fi
+		if [[ -d $d/$path_pattern ]]; then
+			echo $d
+			return 0
+		fi
+		d=$(cd $d/.. && pwd)
+	done
+}
+
+if [[ -z $RLEC ]]; then
+	RLEC=$(find_rlec $PWD rlec/.arlecchino)
+	if [[ -z $RLEC ]]; then
+		RLEC=$(find_rlec $PWD arlecchino/.git)
+		if [[ -z $RLEC ]]; then
+			echo "Cannot find RLEC"
+			exit 1
+		fi
+	fi
+fi
+
+if [[ -z $BB || $BB == 0 ]]; then
+	{ python3 $RLEC/arlecchino/rlec $@; E=$?; } || true
+else
+	{ python3 -m pudb $RLEC/arlecchino/rlec/__main__.py $@; E=$?; } || true
+fi
+exit $E

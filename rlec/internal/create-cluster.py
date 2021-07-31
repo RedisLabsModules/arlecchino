@@ -15,13 +15,13 @@ def try_bootstrap():
     try:
         env1 = os.environ.copy()
         env1["SEC"] = "30"
-        subprocess.check_call(['/opt/view/modullaneous/rlec-docker/internal/wait-for-service', 'cnm_http_ctl'], env=env1)
+        subprocess.check_call(['/opt/view/arlecchino/rlec/internal/wait-for-service', 'cnm_http_ctl'], env=env1)
         output = subprocess.check_output(['/opt/redislabs/bin/rladmin', 'cluster', 'create', 
                                           'name', RLEC_CLUSTER_NAME, 
                                           'username', RLEC_USER, 'password', RLEC_PWD,
                                           'flash_enabled', 'flash_path', '/var/opt/redislabs/flash'], 
                                          stderr=subprocess.STDOUT)
-        subprocess.check_call(['/opt/view/modullaneous/rlec-docker/internal/wait-for-service', 'ccs'])
+        subprocess.check_call(['/opt/view/arlecchino/rlec/internal/wait-for-service', 'ccs'])
         return True
     except subprocess.CalledProcessError as x:
         return False

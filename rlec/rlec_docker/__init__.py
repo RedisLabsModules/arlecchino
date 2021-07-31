@@ -8,9 +8,14 @@ from glob import glob
 import json
 from multiprocessing import Pool
 
-READIES = "/w/rafi_1/readies"
+HERE = os.path.dirname(__file__)
+READIES = os.path.abspath(os.path.join(HERE, "../../readies"))
 sys.path.insert(0, READIES)
-import paella
+import paella  # noqa: F401
+
+RLEC_LATEST_VERSION = "6.0.20"
+RLEC_LATEST_BUILD = "97"
+RLEC_INTERNAL_MASTER_BUILD = 2500
 
 #----------------------------------------------------------------------------------------------
 
@@ -48,20 +53,34 @@ def full_stack():
 
 #----------------------------------------------------------------------------------------------
 
-RLEC_DOCKERS = {
-        'bionic-master': {'image': 'redislabs/redis-internal:100.0.0-2199.bionic', 'cnmver': '100.0.0-2199'},
-        'centos-master': {'image': 'redislabs/redis-internal:100.0.0-2066.rhel7', 'cnmver': '100.0.0-2066'},
-        'centos8-master': {'image': 'redislabs/redis-internal:100.0.5-3996.rhel8', 'cnmver': '100.0.5-3996'},
-        'bionic-1857':   {'image': 'redislabs/redis-internal:100.0.0-1857.bionic', 'cnmver': '100.0.0-1857'},
-        'centos-1922':   {'image': 'redislabs/redis-internal:100.0.0-1922.rhel7', 'cnmver': '100.0.0-1922'},
-        'bionic-6.0.9':  {'image': 'redislabs/redis-internal:6.0.9-2.bionic', 'cnmver': '6.0.9-2'},
-        'bionic-6.0.6':  {'image': 'redislabs/redis:6.0.6-39.bionic', 'cnmver': '6.0.6-39'},
-        'bionic-5.6.0':  {'image': 'redislabs/redis-internal:5.6.0-30.bionic', 'cnmver': '5.6.0-30'},
-        'centos-5.6.0':  {'image': 'redislabs/redis-internal:5.6.0-30.rhel7', 'cnmver': '5.6.0-30'},
-        'bionic-5.4.14': {'image': 'redislabs/redis-internal:5.4.14-19.bionic', 'cnmver': '5.4.14-19'},
-        'centos-5.4.14': {'image': 'redislabs/redis-internal:5.4.14-19.rhel7', 'cnmver': '5.4.14-19'},
-        'bionic-5.4.11': {'image': 'redislabs/redis-internal:5.4.11-2.bionic', 'cnmver': '5.4.11-2'},
-    }
+RLEC_IMAGE = 'redislabs/redis'
+RLEC_INT_IMAGE = 'redislabs/redis-internal'
+
+RLEC_BUILDS = {
+    '6.2.2': {},
+    '6.0.20': {},
+    '6.0.12': {},
+    '6.0.8': {},
+    '5.6.0': {},
+}
+
+RLEC_INT_BUILDS = {
+    'master': { 'version': '100.0.0' },
+    '100.0.5': {},
+    '6.2.2': {},
+    '6.0.20': {},
+    '6.0.12': {},
+    '6.0.8': {},
+    '5.6.0': {},
+}
+
+RLEC_OS = {
+    'trusty': 'trusty',
+    'xenial': 'xenial',
+    'bionic': 'bionic',
+    'centos7': 'rhel7',
+    'centos8': 'rhel8'
+}
 
 #----------------------------------------------------------------------------------------------
 
@@ -76,7 +95,7 @@ class DockerHost:
 
 class Docker:
     pass
-   
+
 class Container:
     def __init__(self, cid):
         pass
@@ -90,57 +109,88 @@ class Container:
 #----------------------------------------------------------------------------------------------
 
 class RLEC:
-    def __init__(self, docker_os=None):
+    def __init__(self, osnick=None, version=None, build=None, internal=False):
         # when views are on nfs and using rancheros (obviously, a hack)
         self.rlec_view_root = None
-        if not os.getenv("RANCHEROS_RLEC") is None:
-            self.rlec_view_root="/mnt/nfs-1"
+        # if not os.getenv("RANCHEROS_RLEC") is None:
+        #     self.rlec_view_root="/mnt/nfs-1"
 
         here = os.path.dirname(paella.current_filepath())
         self.view = paella.relpath(here, '../../..')
         self.viewname = os.path.basename(self.view)
-        
+
         if self.rlec_view_root is None:
             self.rlec_view_root = paella.relpath(self.view, '..')
 
-        self.internal = '/opt/view/modullaneous/rlec-docker/internal'
-        # self._fix_rlec_dir()
+        self.internal = '/opt/view/arlecchino/rlec/internal'
+        self._fix_rlec_dir()
 
-        self._determine_docker_os(docker_os)
-        self.docker_image = RLEC_DOCKERS[self.docker_os]["image"]
-        self.cnm_version = RLEC_DOCKERS[self.docker_os]["cnmver"]
-        
+        self._determine_docker_image(osnick=osnick, version=version, build=build, internal=internal)
+
         self.debug = os.getenv('DEBUG', '') == '1'
         self.slow = os.getenv('SLOW', '') == '1'
         self.verbose = os.getenv('SHOW', '') == '1' or os.getenv('VERBOSE', '') == '1' or os.getenv('V', '') == '1'
 
-    def _determine_docker_os(self, docker_os):
-        if os.path.exists(f"{self.view}/rlec/OS"):
-            docker_os_f = paella.fread(f"{self.view}/rlec/OS")
+    def _determine_docker_image(self, osnick=None, version=None, build=None, internal=False):
+        if os.path.exists(f"{self.view}/rlec/IMAGE"):
+            docker_spec_f = json.loads(paella.fread(f"{self.view}/rlec/IMAGE"))
         else:
-            docker_os_f = None
-        if docker_os is None:
-            if docker_os_f is None:
-                docker_os = 'bionic-master'
-            else:
-                docker_os = docker_os_f
+            docker_spec_f = None
 
-        if not docker_os in RLEC_DOCKERS:
-            print(f"Invalid OS specified: {docker_os}")
-            exit(1)
-        if docker_os_f is None or docker_os != docker_os_f:
-            paella.fwrite(f"{self.view}/rlec/OS", docker_os)
-        self.docker_os = docker_os
-            
+        image_stem = 'redislabs/redis-internal' if internal else 'redislabs/redis'
+        if osnick is None and version is None and docker_spec_f is not None:
+            docker_spec = docker_spec_f
+            osnick = docker_spec["os"]
+            version = docker_spec["version"]
+            build = docker_spec["build"]
+        else:
+            if osnick is None:
+                osnick = 'bionic'
+            if version is None:
+                version = RLEC_LATEST_VERSION if not internal else '100.0.0'
+            if build is None:
+                if internal:
+                    if version == '100.0.0':
+                        build = RLEC_INTERNAL_MASTER_BUILD
+                else:
+                    if version == RLEC_LATEST_VERSION:
+                        build = RLEC_LATEST_BUILD
+            if build is None:
+                raise RuntimeError("Cannot determine build number")
+
+            try:
+                rlec_os = RLEC_OS[osnick]
+            except:
+                raise RuntimeError(f"Incompatible OS specified: {osnick}")
+            docker_spec = { "image": f"{image_stem}:{version}-{build}.{rlec_os}",
+                             "osnick": osnick,
+                             "version": version,
+                             "build": build }
+
+        # if docker_image_f is None or docker_image != docker_image_f:
+        #    paella.fwrite(f"{self.view}/rlec/IMAGE", docker_image)
+        self.docker_spec = docker_spec
+        self.docker_image = docker_spec["image"]
+        self.cnm_version = f"{version}-{build}"
+
+    def _write_docker_image(self):
+        docker_spec_f = None
+        if os.path.exists(f"{self.view}/rlec/IMAGE"):
+            docker_spec_f = paella.fread(f"{self.view}/rlec/IMAGE")
+
+        if docker_spec_f is None or self.docker_spec != docker_spec_f:
+            paella.fwrite(f"{self.view}/rlec/IMAGE", json.dumps(self.docker_spec))
+
     def _fix_rlec_dir(self):
         d = os.path.join(self.view, "rlec")
         if not os.path.isdir(d):
             paella.mkdir_p(f"{d}")
             sh(f"chmod 777 {d}")
             sh(f"chmod g+s {d}")
+            sh(f"touch {d}/.arlecchino")
             print(f"Control directory {d} created.")
             print("Note that redis-modules.yaml needs to be created for loading modules.")
-        else:
+        elif not os.path.exists(f"{d}/.arlecchino"):
             sh(f"chmod -R 777 {d}")
             sh(f"chmod g+s {d}")
 
@@ -156,23 +206,19 @@ class RLEC:
 
     def is_running(self):
         return os.path.isfile(self.view + "/rlec/RLEC")
-    
+
     def cluster(self):
         if self.is_running():
-            cluster = Cluster()
+            cluster = Cluster(rlec=self)
         else:
             cluster = None
         return cluster
 
     def main_node(self):
-        return Node()
+        return Node(rlec=self)
 
     def node_log(self, num):
         return f"{self.view}/rlec/out.{num}"
-    
-    @staticmethod
-    def show_osnicks():
-        print("\n".join(sorted(RLEC_DOCKERS.keys())))
 
     def log(self, text, num=1, new=False):
         paella.fwrite(f"{self.node_log(num)}", text + "\n", mode="w" if new else "a+")
@@ -180,12 +226,13 @@ class RLEC:
             print(text)
 
     def fetch_logs(self):
-        Cluster().fetch_logs()
+        Cluster(rlec=self).fetch_logs()
 
     #------------------------------------------------------------------------------------------
 
     def create_cluster(self, dbname='', shards=1, no_modules=False, no_internet=False,
                        no_patch=False, no_bootstrap=False, keep=False, debug=False):
+        self._write_docker_image()
         if no_internet:
             paella.fwrite(f"{self.view}/rlec/NO_INTERNET", "")
         else:
@@ -194,13 +241,13 @@ class RLEC:
             except:
                 pass
         return Cluster.create(dbname=dbname, shards=1, no_modules=no_modules, no_patch=no_patch,
-                              no_bootstrap=no_bootstrap, keep=keep, debug=debug)
+                              no_bootstrap=no_bootstrap, keep=keep, debug=debug, rlec=self)
 
     def install_modules(self):
         cluster = self.cluster()
         if not cluster is None:
             cluster.install_modules()
-        
+
     def add_node(self, num=1, no_patch=False, no_join=False):
         try:
             cluster = self.cluster()
@@ -218,7 +265,7 @@ class RLEC:
         except:
             print(full_stack())
             exit(1)
-            
+
     def join_node(self, num):
         try:
             cluster = self.cluster()
@@ -241,20 +288,20 @@ class RLEC:
         if self.cluster() is None:
             return
         Cluster().stop()
-        
+
     def create_db(self, name='db1', shards=3, memory='1g', sparse=False, replication=False):
         cluster = self.cluster()
         if cluster is None:
             return
         cluster.create_db(name=name, shards=shards, memory=memory, sparse=sparse, replication=replication)
-    
+
     #------------------------------------------------------------------------------------------
-    
-    def exec(self, cmd, uid=None, cid=None, num=None, to_log=True, to_con=None, vars={}, out=False):
+
+    def exec(self, cmd, uid=None, cid=None, num=None, to_log=True, to_con=None, vars={}, out=False, debug=False):
         def write_log(out):
             if not num is None:
                 self.log(out, num=num)
-        
+
         if not uid is None:
             uid_arg = f"-u {uid}"
         else:
@@ -268,18 +315,18 @@ class RLEC:
             if cid is None:
                 cid = self.cid(node_num=num)
             env_vars = " ".join([f'{n}="{str(v)}"' for n, v in vars.items()])
-            BB()
+
+            cmd = f"docker exec {uid_arg} -it {cid} bash -c '{env_vars} {cmd}'"
             if to_log and not self.verbose:
-                output = subprocess.check_output(f"docker exec {uid_arg} -t {cid} bash -c '{env_vars} {cmd}'", 
-                                                 shell=True, stderr=subprocess.STDOUT, encoding="utf-8")
+                output = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, encoding="utf-8")
                 if to_con:
                     print(output)
                 if to_log:
                     write_log(output)
             else:
                 if self.verbose:
-                    print(f"Executing: " + f"docker exec {uid_arg} -t {cid} bash -c '{env_vars} {cmd}'")
-                subprocess.check_call(f"docker exec {uid_arg} -t {cid} bash -c '{env_vars} {cmd}'", shell=True)
+                    print(f"Executing: {cmd}")
+                subprocess.check_call(cmd, shell=True)
             if out:
                 return 0, output
             else:
@@ -287,30 +334,31 @@ class RLEC:
         except subprocess.CalledProcessError as x:
             BB()
             if to_log:
-                write_log(output)
+                write_log(x.output)
             if out:
-                return x.returncode, output
+                return x.returncode, x.output
             else:
                 return x.returncode
 
-    def iexec(self, cmd, uid=None, cid=None, num=None, vars={}, out=False):
-        return self.exec(f"{self.internal}/{cmd}", uid=uid, cid=cid, num=num, vars=vars, out=out)
+    def iexec(self, cmd, uid=None, cid=None, num=None, vars={}, out=False, debug=False):
+        return self.exec(f"{self.internal}/{cmd}", uid=uid, cid=cid, num=num, vars=vars, out=out, debug=debug)
 
 #----------------------------------------------------------------------------------------------
 
-class Cluster:
-    def __init__(self):
-        self.rlec = RLEC()
+class Cluster(object):
+    def __init__(self, rlec=RLEC()):
+        self.rlec = rlec
 
-    @staticmethod 
-    def create(dbname='', shards=1, no_modules=False, no_patch=False, no_bootstrap=False, keep=False, debug=False):
-        rlec = RLEC()
+    @ctor
+    def create(self, dbname='', shards=1, no_modules=False, no_patch=False, no_bootstrap=False, keep=False, debug=False, rlec=RLEC()):
+        self.rlec = rlec
         try:
             if rlec.is_running():
                 print("RLEC cluster already running.")
-                return False
+                raise RuntimeError("RLEC cluster already running.")
+                # return False
             node = Node.create(no_patch=no_patch)
-           
+
             # if not no_modules:
             #     print("Installing modules...")
             #     self.install_modules()
@@ -320,10 +368,10 @@ class Cluster:
             #         os.unlink(f"{rlec.view}/rlec/modules.json")
             #     except:
             #         pass
-            BB()
+
             if no_bootstrap:
                 print("One node created (non-bootstrapped state).")
-                return Cluster()
+                return# Cluster(rlec=rlec)
             else:
                 vars = {'NODE_NUM': node.num}
                 if debug:
@@ -335,15 +383,15 @@ class Cluster:
 
                 dhost = DockerHost().host
                 print(f"Can be managed via https://{dhost}:8443")
-            return Cluster()
+            # return Cluster(rlec)
         except Exception as x:
             try:
                 if not keep:
                     rlec.stop_cluster()
             except:
                 pass
-            print(f"Error creating RLEC cluster: {str(x)}")
-            exit(1)
+            print(f"Error creating RLEC cluster: {x}")
+            raise RuntimeError(f"Error creating RLEC cluster: {x}")
 
     #------------------------------------------------------------------------------------------
 
@@ -359,7 +407,7 @@ class Cluster:
     def install_modules(self):
         if self.rlec.iexec("deploy-modules", num=1) != 0:
             raise RuntimeError("failed to create cluster")
-    
+
     def stop(self):
         n = len(self.node_numbers())
         if n > 0:
@@ -390,17 +438,17 @@ class Cluster:
     def add_nodes(self, node_numbers, no_patch=False, no_join=False):
         if len(node_numbers) < 1:
             node_numbers = [self.last_node_num() + 1]
-        BB()
         xmap(lambda num: self.add_node(num=num, no_patch=no_patch, no_join=True), node_numbers)
         if not no_join:
             print("Joining nodes...")
             for num in node_numbers:
                 self.join_node(num=num)
             print("Done.")
-    
+
     def join_node(self, num=None, node=None):
+        BB()
         if node is None:
-            node = Node(num=num)
+            node = Node(num=num, rlec=self)
         rlec = self.rlec
         cluster_ip = rlec.main_node().ip()
         if rlec.iexec(f"join-cluster.py {cluster_ip}", num=num, uid=0, cid=node.cid) != 0:
@@ -420,14 +468,16 @@ class Cluster:
             node.stop()
         else:
             raise RuntimeError(f"Node {node.num}: failed to remove from cluster")
-    
+
     def create_db(self, name='db1', shards=3, memory='1g', sparse=False, replication=False):
         try:
             rlec = self.rlec
             sparse_arg = "--sparse" if sparse else ""
             repl_arg = "--replication" if replication else ""
+            # vars = {'BB': '1'}
+            vars = {}
             if rlec.iexec(f"create-db.py --name={name} --shards={shards} --memory='{memory}' {sparse_arg} {repl_arg}",
-                          num=1, vars={'BB': '1'}) == 0:
+                          num=1, vars=vars) == 0:
                 rlec.iexec("rediscli-info.py", num=1, uid=0)
         except Exception as x:
             raise RuntimeError(f"Cannot create database: {str(x)}")
@@ -438,7 +488,7 @@ class Cluster:
         #    rlec.iexec(f"drop-db.py --name={name}", num=1) == 0:
         #except Exception as x:
         #    raise RuntimeError(f"Cannot drop database: {str(x)}")
-        
+
     def fetch_logs(self):
         Node(num=1).fetch_logs()
         for node_num in self.node_numbers():
@@ -448,8 +498,8 @@ class Cluster:
 #----------------------------------------------------------------------------------------------
 
 class Node:
-    def __init__(self, num=1, cid=None):
-        self.rlec = RLEC()
+    def __init__(self, num=1, cid=None, rlec=RLEC()):
+        self.rlec = rlec
         self.num = num
         if not cid is None:
             self.cid = cid
@@ -457,10 +507,9 @@ class Node:
             self.cid = self.rlec.cid(num)
         self.cid_file = f"{self.rlec.view}/rlec/RLEC" + ("" if num == 1 else f".{num-1}")
 
-    @staticmethod 
-    def create(num=1, no_patch=False):
+    @ctor
+    def create(self, num=1, no_patch=False, rlec=RLEC()):
         cid = None
-        rlec = RLEC()
         try:
             if num > 1 and not rlec.is_running():
                 print("RLEC cluster not running.")
@@ -471,8 +520,7 @@ class Node:
 
             k = num - 1
             ports = f"-p {8443+k}:8443 -p {9443+k}:9443 -p {12000+k}:12000 -p {6379+k}:6379"
-            
-            BB()
+
             rlec.log(f"Creating from {rlec.docker_image}", new=True)
             debug_opt = "--privileged --ulimit core=-1 --security-opt seccomp=unconfined"
             cid = sh(f"docker run -d {debug_opt} --cap-add sys_resource {no_inet} {ports} {vol} {rlec.docker_image}")
@@ -489,18 +537,19 @@ class Node:
                 vars["NO_INTERNET"] = 1
             vars["NODE_NUM"] = num
             vars["CNM_VER"] = rlec.cnm_version
-            
+
             print(f"Preparing node {num}...")
-            rlec.exec(f"/v/{rlec.viewname}/modullaneous/rlec-docker/internal/rlec-fixes", num=num, uid=0, cid=cid, vars=vars)
+            rlec.exec(f"/v/{rlec.viewname}/arlecchino/rlec/internal/rlec-fixes", num=num, uid=0, cid=cid, vars=vars)
             print(f"Node {num} created.")
 
-            return Node(num=num, cid=cid)
+            self.num = num
+            self.cid = cid
         except:
             if not cid is None:
                 subprocess.check_output(f"docker stop {cid}", shell=True, stderr=subprocess.STDOUT)
                 subprocess.check_output(f"docker rm {cid}", shell=True, stderr=subprocess.STDOUT)
             print("Error creating RLEC node")
-            exit(1)
+            raise RuntimeError("Error creating RLEC node")
 
     #------------------------------------------------------------------------------------------
 

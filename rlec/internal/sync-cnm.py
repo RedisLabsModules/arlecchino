@@ -29,7 +29,7 @@ if len(sys.argv) == 1:
     exit(0)
 version = sys.argv[1]
 	
-src = '/opt/view/modullaneous/rlec-docker/' + version
+src = '/opt/view/arlecchino/rlec/' + version
 dest = '/opt/redislabs/lib/python2.7/site-packages'
 
 if not os.path.exists(dest + '/cnm/CNM.pyo'):

@@ -381,7 +381,10 @@ class Cluster(object):
 
                 print("Cluster created.")
 
-                dhost = DockerHost().host
+                if sh(f'{READIES}/bin/isec2') == 'no':
+                    dhost = DockerHost().host
+                else:
+                    dhost = sh(f'{READIES}/bin/mainip')
                 print(f"Can be managed via https://{dhost}:8443")
             # return Cluster(rlec)
         except Exception as x:

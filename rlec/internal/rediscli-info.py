@@ -1,10 +1,15 @@
-#!/opt/redislabs/bin/python
+#!/opt/redislabs/bin/python2 -O
 
 import json
 import os
 import sys
 import re
 from shutil import copy2
+
+from rlec_auto import *
+
+sys.path.insert(0, "/opt/readies")
+import paella
 
 try:
     with open('/opt/view/rlec/db.json', 'r') as jfile:

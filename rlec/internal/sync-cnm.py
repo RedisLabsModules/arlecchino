@@ -1,4 +1,4 @@
-#!/opt/redislabs/bin/python
+#!/opt/redislabs/bin/python -O
 
 import os
 import sys
@@ -10,6 +10,11 @@ import grp
 import stat
 import subprocess
 import time
+
+from rlec_auto import *
+
+sys.path.insert(0, "/opt/readies")
+import paella
 
 def chown(path, u, g):
     if isinstance(u, int):

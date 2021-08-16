@@ -1,8 +1,14 @@
-#!/opt/redislabs/bin/python2
+#!/opt/redislabs/bin/python2 -O
 
 import os
+import sys
 import subprocess
 import time
+
+from rlec_auto import *
+
+sys.path.insert(0, "/opt/readies")
+import paella
 
 RLEC_CLUSTER_NAME = "rlec1"
 RLEC_USER = "a@a.com"

@@ -1,9 +1,14 @@
-#!/opt/redislabs/bin/python2
+#!/opt/redislabs/bin/python2 -O
 
 import sys
 import os
 import subprocess
 import time
+
+from rlec_auto import *
+
+sys.path.insert(0, "/opt/readies")
+import paella
 
 RLEC_USER = "a@a.com"
 RLEC_PWD = "a"
@@ -25,7 +30,6 @@ def try_join(master_ip):
     except subprocess.CalledProcessError as x:
         return False
 
-BB()
 master_ip = sys.argv[1]
 print("Joining cluster...")
 for i in range(3):

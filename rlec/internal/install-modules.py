@@ -1,4 +1,4 @@
-#!/opt/redislabs/bin/python
+#!/opt/redislabs/bin/python2 -O
 
 from __future__ import print_function
 import os
@@ -19,6 +19,8 @@ from collections import OrderedDict
 import tempfile
 import subprocess
 from textwrap import dedent
+
+from rlec_auto import *
 
 sys.path.insert(0, "/opt/readies")
 import paella

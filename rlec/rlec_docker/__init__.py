@@ -385,7 +385,7 @@ class Cluster(object):
                     dhost = DockerHost().host
                 else:
                     dhost = sh(f'{READIES}/bin/mainip')
-                print(f"Can be managed via https://{dhost}:8443")
+                print(f"Can be managed via https://{dhost}:8443 [username: a@a.com, password: a]")
             # return Cluster(rlec)
         except Exception as x:
             try:
@@ -451,7 +451,7 @@ class Cluster(object):
     def join_node(self, num=None, node=None):
         BB()
         if node is None:
-            node = Node(num=num, rlec=self)
+            node = Node(num=num, rlec=self.rlec)
         rlec = self.rlec
         cluster_ip = rlec.main_node().ip()
         if rlec.iexec(f"join-cluster.py {cluster_ip}", num=num, uid=0, cid=node.cid) != 0:
@@ -479,7 +479,7 @@ class Cluster(object):
             repl_arg = "--replication" if replication else ""
             # vars = {'BB': '1'}
             vars = {}
-            if rlec.iexec(f"create-db.py --name={name} --shards={shards} --memory='{memory}' {sparse_arg} {repl_arg}",
+            if rlec.iexec(f"create-db.py --name={name} --shards={shards} --memory={memory} {sparse_arg} {repl_arg}",
                           num=1, vars=vars) == 0:
                 rlec.iexec("rediscli-info.py", num=1, uid=0)
         except Exception as x:

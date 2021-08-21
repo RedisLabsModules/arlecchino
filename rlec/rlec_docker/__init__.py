@@ -140,7 +140,7 @@ class RLEC:
         image_stem = 'redislabs/redis-internal' if internal else 'redislabs/redis'
         if osnick is None and version is None and docker_spec_f is not None:
             docker_spec = docker_spec_f
-            osnick = docker_spec["os"]
+            osnick = docker_spec["osnick"]
             version = docker_spec["version"]
             build = docker_spec["build"]
         else:

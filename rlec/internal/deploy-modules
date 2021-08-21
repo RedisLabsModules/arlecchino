@@ -14,4 +14,4 @@ fi
 # rm -f /opt/redislabs/lib/modules/*
 
 echo "Installing modules..."
-/opt/redislabs/bin/python2 /opt/view/arlecchino/rlec/internal/install-modules.py --yaml /opt/view/rlec/$YAML --modinfo /opt/view/rlec/modules.json
+/opt/view/arlecchino/rlec/internal/install-modules.py --yaml /opt/view/rlec/$YAML --modinfo /opt/view/rlec/modules.json

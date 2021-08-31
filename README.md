@@ -2,111 +2,119 @@
 
 # Arlecchino
 
-### So you want to run Redis Software with Redis Modules, eh?
+### So you want to run Redis Enterprise with Redis Modules, eh?
 
-## Why like this?
+## Why?
 
-* You want to quickly setup a Redis Software (Enterprise) Cluster using Docker
-* You need a quick edit-compile-test experience with a Redis module in a RS Cluster
-* You'd like to automate RS Cluster-related scenarios (e.g., for automatic testing)
+* Quickly setup a Redis Enterprise Cluster (RLEC) using Docker
+* Quick edit-compile-test experience with a Redis module in a Redis Enterprise Cluster
+* Run RLTest tests on a Redis Enterprise Cluster
 
 ## What's needed?
 
 * A machine with at least 16GB RAM (cloud machines will work fine)
 * Python 3.6 or higher
 * Docker installation that can operate with volumes (i.e., `docker run -v /v:/v ...`)
-* Permissions to access [RedisLabs Dockerhub Internal Repo](https://hub.docker.com/repository/docker/redislabs/redis-internal/tags)
 * A directory on your filesystem, designated as a **view directory**
+* Permissions to access [RedisLabs Dockerhub Internal Repo](https://hub.docker.com/repository/docker/redislabs/redis-internal/tags) (optional)
 
 ## Fellas, I'm ready to get up and do my thing
 
-First, let's create a **view directory**, which is simply a directory that will hold your cloned Git modules (and some more stuff we'll soon encounter), and actually act as a point of reference to the RS instances we'll be running.
+First, let's create a **view directory**, which is simply a directory that will hold your cloned Git repos of Redis Modules (and some more stuff we'll soon encounter), and actually act as a point of reference to the RLEC instances we'll be running.
 
-We'll first see how to run a single node RS instance without modules, and then add more nodes and modules to the pan.
+We'll first see how to run a single node RLEC instance without modules, and then add more nodes and modules to the pan.
 
-To prepare the view, execute the following from within the view directory:
+To prepare the view, execute the following from within the view directory (we're using `/view` for simplicity, but you can place it in your home directory, for instance):
 ```
-source <(curl -Ls http://tiny.cc/rlec-docker)
+mkdir /view
+cd /view
+source <(curl -Ls http://tiny.cc/arlecchino)
 ```
 
-This will also introduce several commands (as aliases), all starting with ''rlec-'' prefix, that will refer to our view, no matter from which directory they are invoked, as long as you run from the same shell instance.<a href="#note1" id="note1ref"><sup>1</sup></a>
-
+This will also introduce the `rlec` command which will allow us to operate the cluster.
 Without delay, invoke the first one:
+
 ```
-rlec-start
+rlec start
 ```
 
-It will download a RS docker image and run it.
+It will download a RLEC docker image and run it.
 
 Let's look at the output:
 
 ```
-Control directory /view1/rlec created.
+Control directory /view/rlec created.
 Note that redis-modules.yaml needs to be created for loading modules.
-Created docker 3b5c55b3ffc44e9dee82d2d881be8033b6744e088748ced934ba475f03dd50e1
-Patching CNM...
-Looking for custom CNM artifacts at /opt/view/modullaneous/rlec-docker/cnm-5.4.6-11/python
-Found!
-Syching the following CNM artifacts:
-/v/rafi_2/modullaneous/rlec-docker/cnm-5.4.6-11/python/CCS.py -> /opt/redislabs/lib/cnm/CCS.py
-/v/rafi_2/modullaneous/rlec-docker/cnm-5.4.6-11/python/http_services/cluster_api/module_handler.py -> /opt/redislabs/lib/cnm/http_services/cluster_api/module_handler.py
-cnm_exec: stopped
-cnm_exec: started
-cnm_http: stopped
-cnm_http: started
-No modules specified.
-
-Creating cluster...
-Creating a new cluster... ok
-
-Creating database...
-Done.
+Using redislabs/redis:6.0.20-97.bionic
+Preparing node 1...
+Node 1 created.
+Cluster created.
+Can be managed via https://3.249.58.234:8443 [username: a@a.com, password: a]
+Elapsed: 0:01:09.440558
 ```
 
 ## What just happened?
 
-First, the control directory is announced. This is a directory to which RS writes useful information (such as Redis config files), and also a place for us to create configuration files to tweak its behavior.
+First, the control directory is announced. This is a directory to which *arlecchino* writes file with useful information, and also a place for us to create configuration files.
 
-Next, CNM patching takes place. More on that later.
+If RLEC version information is not specified, *arlecchino* will select one and start its container.
+Once the container is ready, Redis Modules are installed and a database is created.
 
-After patching is done, modules are installed from their packages into the RS container.
-
-Once modules are in place, a cluster is created, followed by a Redis database. That's it - we now can use Redis, which is available on it's default port: 6379.
+That's it - we now can use RLEC, which is available on port: 12000:
+```
+redis-cli -p 12000
+```
 
 Actually, we can approach RS in two ways:
 
-* Using the ```rlec-cli``` command, which will invoke redis-cli (it has to be installed on our host for this to work).
-* Using the ```rlec-sh``` command, which will SSH into the RS container, where we can examine logs and other RS internal matters. It is also possible to invoke redis-cli from within the container.
+* Using the `rlec cli` command, which will invoke `redis-cli` (it has to be installed on our host for this to work).
+* Using the `rlec sh` command, which will SSH into the RLEC container, where we can examine logs and other RS internal matters. It is also possible to invoke bdb-cli from within the container.
 
-We can also examine the status of our RS instance with the ```rlec-status``` command, which simply report whether RS is running on not.
+We can also examine the status of our RS instance with the `rlec status` command, which simply report whether RS is running on not. `rlec status -a` will invoke `rladmin` from within the container.
 
-Finally, we can stop the RS container using ```rlec-stop```, which will stop the RS cluster  but keep the control directory in place, so we can create a new one with the same characteristics.
+Finally, we can stop the RS container using `rlec stop`, which will stop the RLEC cluster but keeps the control directory in place, so we can create a new one with the same characteristics.
 
-This is a good time to introduce the `rlec-help` command, which displays the following:
+This is a good time to introduce the `rlec help` command, which displays the following:
 ```
-RLEC Docker operations.
+             @-.
+           _  )\\  _
+          / \/ | \/ \
+         @/`|/\/\/|`\@    Arlecchino v1.0.0
+            /~~~~~\
+           |  ^ ^  |      Redis Labs Enterprise Cluster
+           |   .   |      on Docker
+           | (\_/) |
+        .-"-\ \_/ /-"-.
+       / .-. \___/ .-. \
+      @/` /.-.   .-.\ `\@
+         @`   \ /   `@
+               @
 
-rlec-start                Start cluster (node 1 & boostrap)
-rlec-stop                 Stop cluster (stop all nodes)
-rlec-status               Show cluster status (running/stopped)
-rlec-sh                   Execute shell (or command) on a node
-rlec-cli                  Execute redis-cli
-rlec-add-node|rlec-node+  Start a node and add it to the cluster
-rlec-rm-node|rlec-node-   Remove a node from cluster and terminate it
-rlec-create-db            Create a database
-rlec-drop-db              Drop a database
-rlec-reinstall-modules    Reinstall Redis modules
+Usage:  [OPTIONS] COMMAND [ARGS]...
 
-Input files:
-rlec.yaml           Cluster creation parameters
-redis-modules.yaml  Redis modules for installation
+Options:
+  --debug    Invoke debugger
+  --verbose  Show output of all commands
+  --version  Show version
+  --help     Show this message and exit.
 
-Output files:
-RLEC                Docker ID of master node
-db1.yaml            Database attributes
+Commands:
+  start            Start RLEC cluster
+  stop             Stop RLEC cluster
+  status           Show RLEC cluster status
+  admin            Run rladmin
+  sh               Invoke RLEC command or interactive shell
+  tmux             Run tmux
+  cli              Invoke redis-cli in RLEC
+  logs             Fetch RLEC logs
+  node+            Add RLEC node
+  node-            Remove RLEC node
+  create_db        Create a database
+  drop_db          Drop a database
+  install_modules  Install modules
+  help             Print help
 
 Variables:
-RLEC         Root of RLEC view
 DOCKER_HOST  Host running Docker server (localhost if undefined)
 ```
 
@@ -158,7 +166,7 @@ We'll use RedisAI module to demonstrate. We'll assume we cloned it into our view
 
 The results of the build and packaging process are a RAMP file and (in case of RedisAI) a dependency tar file.
 
-Looking at ```rlec-start``` output, it looks almost obvious.
+Looking at `rlec start` output, it looks almost obvious.
 
 ```
 Created docker ce87e9fc3bbb4697e82be14f3b9886771a6df14ef6494a27f21e67e781a8ac4d
@@ -184,21 +192,21 @@ Done.
 
 That's it!
 
-We just need to connect RLTest to the RS container, and we're off to the races.
+We just need to connect RLTest to the RLEC container, and we're off to the races.
 
-## Appendis: CNM
+## Appendix: Cluster creation in details
+...
 
-CNM is a Python modules that controls RS operation. One often needs to debug it to understand why CNM acts the way it does, or modify it in a way that suites our need. Since CNS is distributed in binary form within the RS docker image, we need to use some trickery to get (possibly modified) Python source code into the container.
+## Appendix: CNM and CNM patches
 
-## Redis logs within RS
+CNM is a Python modules that controls RLEC operation. One often needs to debug it to understand why CNM acts the way it does, or modify it in a way that suites our need. Since CNS is distributed in binary form within the RLEC docker image, we need to use some trickery to get (possibly modified) Python source code into the container.
 
-TBD
+## Appendix: Redis logs within RLEC
 
-## Location of modules within RS
+...
 
-TBD
+## Appendix: Location of modules within RLEC
+
+...
 
 ## Footnotes
-
-<a  id="note1" href="#note1ref"><sup>1</sup></a>
-In order to enable rlec- commands from an other shell instance, invoke `source $viewdir/modullaneous/rlec-docker/aliases`, with $viewdir being the path of your view directory.

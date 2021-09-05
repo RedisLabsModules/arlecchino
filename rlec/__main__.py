@@ -150,6 +150,7 @@ def start(osnick, version, build, internal, nodes, shards, name, memory, sparse,
         if not no_modules:
             rlec.install_modules()
         if not no_db:
+            BB()
             rlec.create_db(name=name, shards=shards, memory=memory, sparse=sparse, replication=replication)
     rlec.fetch_logs()  # TODO: call fetch_logs after each operation, internally
     report_elapsed()
@@ -199,12 +200,11 @@ def admin(*args):
 
 @main.command(name='sh', help='Invoke RLEC command or interactive shell', cls=Command1)
 @click.option('-n', '--node', type=int, default=1, help='Node number')
-@click.option('-c', '--command', type=str, default=[], help='Command')
-@click.argument('args', nargs=-1, type=str)
-def shell(node, command, args):
-    args = list(args)
-    if command == []:
-        command = args
+# @click.option('-c', '--command', type=str, default=[], help='Command')
+@click.argument('command', nargs=-1, type=str)
+def shell(node, command):
+    BB()
+    command = list(command)
     rlec = RLEC()
     if not rlec.is_running():
         print("RLEC docker not running.")

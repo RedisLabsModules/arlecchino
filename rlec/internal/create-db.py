@@ -136,6 +136,8 @@ else:
     print("There are errors.")
     exit(1)
 
+os.unlink('/opt/view/rlec/cnm_exec.log')
 shutil.copy('/var/opt/redislabs/log/cnm_exec.log', '/opt/view/rlec')
+sh("chmod 666 /opt/view/rlec/cnm_exec.log")
 print('Done.')
 exit(0)

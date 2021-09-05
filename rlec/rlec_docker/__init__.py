@@ -473,6 +473,7 @@ class Cluster(object):
             raise RuntimeError(f"Node {node.num}: failed to remove from cluster")
 
     def create_db(self, name='db1', shards=3, memory='1g', sparse=False, replication=False):
+        BB()
         try:
             rlec = self.rlec
             sparse_arg = "--sparse" if sparse else ""

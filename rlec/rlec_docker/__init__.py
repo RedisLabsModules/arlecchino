@@ -221,7 +221,7 @@ class RLEC:
         return f"{self.view}/rlec/out.{num}"
 
     def log(self, text, num=1, new=False):
-        paella.fwrite(f"{self.node_log(num)}", text + "\n", mode="w" if new else "a+")
+        paella.fwrite(f"{self.node_log(num)}", f"{text}\n", mode="w" if new else "a+")
         if self.verbose:
             print(text)
 

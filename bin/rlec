@@ -21,16 +21,36 @@ find_rlec() {
 	done
 }
 
+update_arlecchino() {
+	if [[ -f $RLEC/.last-pull && $RLEC/.last-pull -nt 1 ]]; then
+		return
+	fi
+	cd $RLEC/arlecchino
+	if [[ $(git branch --show-current) != master ]]; then
+		return
+	fi
+	if [[ $(git diff --quiet; echo $?) == 1 ]]; then
+		return
+	fi
+	runn git pull --quiet --recurse-submodules
+	touch $RLEC/.last-pull
+}
+
 if [[ -z $RLEC ]]; then
 	RLEC=$(find_rlec $PWD rlec/.arlecchino)
 	if [[ -z $RLEC ]]; then
 		RLEC=$(find_rlec $PWD arlecchino/.git)
 		if [[ -z $RLEC ]]; then
-			echo "Cannot find RLEC"
-			exit 1
+			RLEC=$(find_rlec `cd $HERE/../.. && pwd` arlecchino/.git)
+			if [[ -z $RLEC ]]; then
+				echo "Cannot find RLEC; Try setting RLEC env var to the base dir of git repos."
+				exit 1
+			fi
 		fi
 	fi
 fi
+
+(update_arlecchino)
 
 if [[ -z $BB || $BB == 0 ]]; then
 	{ python3 $RLEC/arlecchino/rlec $@; E=$?; } || true

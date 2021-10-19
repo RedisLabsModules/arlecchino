@@ -22,7 +22,8 @@ find_rlec() {
 }
 
 update_arlecchino() {
-	if [[ -f $RLEC/.last-pull && $RLEC/.last-pull -nt 1 ]]; then
+	flast=$RLEC/rlec/.last-pull
+	if [[ -f $flast && $flast -nt 1 ]]; then
 		return
 	fi
 	cd $RLEC/arlecchino
@@ -33,7 +34,7 @@ update_arlecchino() {
 		return
 	fi
 	runn git pull --quiet --recurse-submodules
-	touch $RLEC/.last-pull
+	touch $flast
 }
 
 if [[ -z $RLEC ]]; then

@@ -1,7 +1,14 @@
 #!/bin/bash
 
 set -e
-HERE="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" >/dev/null 2>&1 && pwd)"
+
+if [[ `uname -s` == Darwin ]]; then
+	READLINK=greadlink
+else
+	READLINK=readlink
+fi
+
+HERE="$(cd "$(dirname "$($READLINK -f "${BASH_SOURCE[0]}")")" >/dev/null 2>&1 && pwd)"
 READIES=$(cd $HERE/../readies && pwd)
 . $READIES/shibumi/defs
 

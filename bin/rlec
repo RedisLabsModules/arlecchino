@@ -58,7 +58,13 @@ if [[ -z $RLEC ]]; then
 	fi
 fi
 
-update_arlecchino
+if [[ ! -d $RLEC/rlec ]]; then
+	mkdir $RLEC/rlec
+	chmod 777 $RLEC/rlec
+fi
+
+(update_arlecchino)
+
 [[ ! -d $RLEC/arlecchino/venv ]] && $RLEC/arlecchino/bin/setup-venv
 source $RLEC/arlecchino/venv/bin/activate
 

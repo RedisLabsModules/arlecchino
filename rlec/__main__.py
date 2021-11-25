@@ -39,7 +39,7 @@ class Group1(click.Group):
           / \/ | \/ \
          @/`|/\/\/|`\@    Arlecchino v{VERSION}
             /~~~~~\
-           |  ^ ^  |      Redis Labs Enterprise Cluster
+           |  ^ ^  |      Redis Enterprise Cluster
            |   .   |      on Docker
            | (\_/) |
         .-"-\ \_/ /-"-.

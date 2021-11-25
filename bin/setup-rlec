@@ -22,14 +22,14 @@ else
     cd arlecchino
 fi
 
-# READIES=$(cd readies && pwd)
-# . $READIES/shibumi/defs
-
 [[ ! -d venv ]] && ./bin/setup-venv
+
+mkdir -p ../rlec
+chmod 777 ../rlec
 
 if [[ ! -e /usr/local/bin/rlec ]]; then
     SUDO=$(command -v sudo)
-    $SUDO ln -s $PWD/arlecchino/bin/rlec /usr/local/bin/rlec
+    $SUDO ln -s $PWD/bin/rlec /usr/local/bin/rlec
 fi
 
 echo "Done."

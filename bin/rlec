@@ -59,6 +59,8 @@ if [[ -z $RLEC ]]; then
 fi
 
 update_arlecchino
+[[ ! -d $RLEC/arlecchino/venv ]] && $RLEC/arlecchino/bin/setup-venv
+source $RLEC/arlecchino/venv/bin/activate
 
 if [[ -z $BB || $BB == 0 ]]; then
 	{ python3 $RLEC/arlecchino/rlec $@; E=$?; } || true

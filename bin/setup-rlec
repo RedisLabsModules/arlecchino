@@ -1,0 +1,27 @@
+#!/bin/bash
+
+pycheck="import sys; exit(1) if sys.version_info.major < 3 and sys.version_info.minor < 5 else exit(0)"
+if ! python3 -c "$pycheck"; then
+	>&2 echo "error: arlecchino requires Python 3.6 or above"
+	exit 1
+fi
+
+if [[ -d arlecchino ]]; then
+    cd arlecchino
+    if ! git pull --quiet --recurse-submodules; then
+        >&2 echo "warning: could not update arlecchino"
+    fi
+else
+    git clone --quiet --recursive ssh://git@github.com/RedisLabsModules/arlecchino.git
+    cd arlecchino
+fi
+
+# READIES=$(cd readies && pwd)
+# . $READIES/shibumi/defs
+
+[[ ! -d venv ]] && ./bin/setup-venv
+
+if [[ ! -e /usr/local/bin/rlec ]]; then
+    SUDO=$(command -v sudo)
+    $SUDO ln -s $PWD/arlecchino/bin/rlec /usr/local/bin/rlec
+fi

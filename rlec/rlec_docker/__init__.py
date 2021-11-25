@@ -7,6 +7,7 @@ import time
 from glob import glob
 import json
 from multiprocessing import Pool
+from urllib.parse import urlparse
 
 HERE = os.path.dirname(__file__)
 READIES = os.path.abspath(os.path.join(HERE, "../../readies"))
@@ -87,9 +88,10 @@ RLEC_OS = {
 class DockerHost:
     def __init__(self):
         try:
-            self.host = os.environ.get("DOCKER_HOST").split(':')[0]
+            url = urlparse(os.getenv("DOCKER_HOST", 'tcp://127.0.0.1:2375'))
+            self.host = url.hostname
         except:
-            self.host = 'localhost'
+            self.host = '127.0.0.1'
 
 #----------------------------------------------------------------------------------------------
 

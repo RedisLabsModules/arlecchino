@@ -56,7 +56,7 @@ class Group1(click.Group):
 
 Variables:
 RLEC         Root of RLEC view (mandatory)
-DOCKER_HOST  Host running Docker server (localhost if undefined)
+DOCKER_HOST  Host running Docker server (tcp://127.0.0.1:2375 if undefined)
 '''
 
     def get_help(self, ctx):
@@ -87,7 +87,7 @@ db1.yaml  Database attributes
 
 Variables:
 RLEC         Root of RLEC view
-DOCKER_HOST  Host running Docker server (localhost if undefined)
+DOCKER_HOST  Host running Docker server (tcp://127.0.0.1:2375 if undefined)
 
 '''
 

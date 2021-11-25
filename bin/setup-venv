@@ -1,0 +1,14 @@
+#!/bin/bash
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+ROOT=$(cd $HERE/.. && pwd)
+READIES=$ROOT/readies
+. $READIES/shibumi/defs
+
+runn python3 -m pip install virtualenv
+runn rf -rm .venv
+runn python3 -m virtualenv .venv
+source .venv/bin/activate
+runn python3 -m pip install -r $READIES/paella/requirements.txt
+runn python3 -m pip install -r requirements.txt
+runn mv .venv venv

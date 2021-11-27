@@ -71,6 +71,7 @@ source $RLEC/arlecchino/venv/bin/activate
 if [[ -z $BB || $BB == 0 ]]; then
 	{ python3 $RLEC/arlecchino/rlec $@; E=$?; } || true
 else
+	[[ $(uname) == Darwin && -z $LC_ALL ]] && export LC_ALL='en_US.UTF-8'
 	{ python3 -m pudb $RLEC/arlecchino/rlec/__main__.py $@; E=$?; } || true
 fi
 exit $E

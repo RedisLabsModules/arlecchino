@@ -5,11 +5,13 @@ ROOT=$(cd $HERE/.. && pwd)
 READIES=$ROOT/readies
 . $READIES/shibumi/defs
 
+cd $ROOT
+
 echo Installing Python packages ...
 runn python3 -m pip install virtualenv
-[[ -e .venv ]] && rm -rf .venv
-runn python3 -m virtualenv .venv
-source .venv/bin/activate
+# [[ -e .venv ]] && rm -rf .venv
+runn python3 -m virtualenv venv
+source venv/bin/activate
 runn python3 -m pip install -r $READIES/paella/requirements.txt
 runn python3 -m pip install -r requirements.txt
-mv .venv venv
+# mv .venv venv

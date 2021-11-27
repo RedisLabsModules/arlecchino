@@ -28,12 +28,17 @@ To prepare the view, execute the following from within the view directory (we're
 ```
 mkdir /view
 cd /view
-source <(curl -Ls http://tiny.cc/arlecchino)
+bash <(curl -fsSL http://tiny.cc/arlecchino)
 ```
 
 This will also introduce the `rlec` command which will allow us to operate the cluster.
-Without delay, invoke the first one:
 
+Next, gain root privileges to invoke Docker:
+```
+sudo bash
+```
+
+Then, without delay, invoke your first `rlec` command:
 ```
 rlec start
 ```

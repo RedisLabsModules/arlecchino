@@ -14,11 +14,14 @@ if [[ -d arlecchino ]]; then
     echo "Updating arlecchino ..."
     cd arlecchino
     if ! git pull --quiet --recurse-submodules; then
-        >&2 echo "warning: could not update arlecchino"
+        >&2 echo "arlecchino: warning: could not update"
     fi
 else
     echo "Cloning arlecchino ..."
-    git clone --quiet --recursive ssh://git@github.com/RedisLabsModules/arlecchino.git
+    if ! git clone --quiet --recursive ssh://git@github.com/RedisLabsModules/arlecchino.git; then
+        >&2 echo "arlecchino: clone failed"
+        exit 1
+    fi
     cd arlecchino
 fi
 

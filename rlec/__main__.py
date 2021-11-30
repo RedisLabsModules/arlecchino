@@ -99,12 +99,20 @@ DOCKER_HOST  Host running Docker server (tcp://127.0.0.1:2375 if undefined)
 
 @click.group(cls=Group1, name="rlec", invoke_without_command=True)
 @click.option('--debug', is_flag=True, help='Invoke debugger')
+@click.option('--update', is_flag=True, help='Check for updates')
 @click.option('--verbose', is_flag=True, help='Show output of all commands')
 @click.option('--version', is_flag=True, help='Show version')
-def main(debug, verbose, version):
+def main(debug, update, verbose, version):
     if version:
         print(f"Arlecchino {VERSION}")
         exit(0)
+    if update:
+        print("Updating Arlecchino...")
+        paella.sh(f"cd {ROOT}/arlecchino; git pull --quiet --recurse-submodules")
+        print("Done.")
+        exit(0)
+    if verbose:
+        ENV['VERBOSE'] = "1"
 
 #----------------------------------------------------------------------------------------------
 

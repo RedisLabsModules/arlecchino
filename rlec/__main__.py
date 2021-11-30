@@ -174,7 +174,7 @@ def stop():
 @main.command(help='Show RLEC cluster status', cls=Command1)
 @click.option('-a', '--admin', is_flag=True, help="Run rladmin status")
 @click.option('-s', '--services', is_flag=True, help="Run supervisorctl status")
-def status(admin):
+def status(admin, services):
     rlec = RLEC()
     if not rlec.is_running():
         print("RLEC docker is not running.")
@@ -183,7 +183,7 @@ def status(admin):
         node = rlec.main_node()
         os.system(f"docker exec -u 0 -it {node.cid} bash -c 'rladmin status'")
         exit(0)
-    if admin:
+    if services:
         node = rlec.main_node()
         os.system(f"docker exec -u 0 -it {node.cid} bash -c 'supervisorctl status'")
         exit(0)

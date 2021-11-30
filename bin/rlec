@@ -4,6 +4,9 @@ set -e
 
 if [[ `uname -s` == Darwin ]]; then
 	READLINK=greadlink
+	if ! command greadlink; then
+		brew install coreutils
+	fi
 else
 	READLINK=readlink
 fi

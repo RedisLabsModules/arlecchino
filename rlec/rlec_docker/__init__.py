@@ -112,10 +112,7 @@ class Container:
 
 class RLEC:
     def __init__(self, osnick=None, version=None, build=None, internal=False):
-        # when views are on nfs and using rancheros (obviously, a hack)
         self.rlec_view_root = None
-        # if not os.getenv("RANCHEROS_RLEC") is None:
-        #     self.rlec_view_root="/mnt/nfs-1"
 
         here = os.path.dirname(paella.current_filepath())
         self.view = paella.relpath(here, '../../..')
@@ -359,7 +356,7 @@ class Cluster(object):
                 print("RLEC cluster already running.")
                 raise RuntimeError("RLEC cluster already running.")
                 # return False
-            node = Node.create(no_patch=no_patch)
+            node = Node.create(no_patch=no_patch, rlec=rlec)
 
             # if not no_modules:
             #     print("Installing modules...")
@@ -515,6 +512,8 @@ class Node:
 
     @ctor
     def create(self, num=1, no_patch=False, rlec=RLEC()):
+        BB()
+        self.rlec = rlec
         cid = None
         try:
             if num > 1 and not rlec.is_running():
@@ -529,7 +528,10 @@ class Node:
 
             rlec.log(f"Creating from {rlec.docker_image}", new=True)
             debug_opt = "--privileged --ulimit core=-1 --security-opt seccomp=unconfined"
-            cid = sh(f"docker run -d {debug_opt} --cap-add sys_resource {no_inet} {ports} {vol} {rlec.docker_image}")
+            run_cmd = f"docker run -d {debug_opt} --cap-add sys_resource {no_inet} {ports} {vol} {rlec.docker_image}"
+            if rlec.verbose:
+                rlec.log(run_cmd)
+            cid = sh(run_cmd)
             # time.sleep(5)
             # docker inspect -f '{{.State.Running}}'
             cid_file = f"{rlec.view}/rlec/RLEC" + ("" if num == 1 else f".{k}")

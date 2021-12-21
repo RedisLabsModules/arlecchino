@@ -288,11 +288,11 @@ class RLEC:
             return
         Cluster().stop()
 
-    def create_db(self, name='db1', shards=3, memory='1g', sparse=False, replication=False):
+    def create_db(self, name='db1', shards=3, memory='1g', sparse=False, replication=False, flash=None):
         cluster = self.cluster()
         if cluster is None:
             return
-        cluster.create_db(name=name, shards=shards, memory=memory, sparse=sparse, replication=replication)
+        cluster.create_db(name=name, shards=shards, memory=memory, sparse=sparse, replication=replication, flash=flash)
 
     #------------------------------------------------------------------------------------------
 
@@ -313,6 +313,10 @@ class RLEC:
                 num = 1
             if cid is None:
                 cid = self.cid(node_num=num)
+            if debug is not None and (debug or os.getenv('BB', '0') == '1'):
+                vars['BB'] = '1'
+                if '.py' not in cmd:
+                    cmd = "bashdb " + cmd
             env_vars = " ".join([f'{n}="{str(v)}"' for n, v in vars.items()])
 
             cmd = f"docker exec {uid_arg} -it {cid} bash -c '{env_vars} {cmd}'"
@@ -340,6 +344,9 @@ class RLEC:
                 return x.returncode
 
     def iexec(self, cmd, uid=None, cid=None, num=None, vars={}, out=False, debug=False):
+        if debug or os.getenv('BB', '0') == '1':
+            if '.py' in cmd:
+                cmd = "/opt/redislabs/python -O -m pudb " + cmd
         return self.exec(f"{self.internal}/{cmd}", uid=uid, cid=cid, num=num, vars=vars, out=out, debug=debug)
 
 #----------------------------------------------------------------------------------------------
@@ -471,15 +478,16 @@ class Cluster(object):
         else:
             raise RuntimeError(f"Node {node.num}: failed to remove from cluster")
 
-    def create_db(self, name='db1', shards=3, memory='1g', sparse=False, replication=False):
+    def create_db(self, name='db1', shards=3, memory='1g', sparse=False, replication=False, flash=None):
         BB()
         try:
             rlec = self.rlec
             sparse_arg = "--sparse" if sparse else ""
             repl_arg = "--replication" if replication else ""
+            flash_arg = f"--flash {flash}" if flash is not None else ""
             # vars = {'BB': '1'}
             vars = {}
-            if rlec.iexec(f"create-db.py --name={name} --shards={shards} --memory={memory} {sparse_arg} {repl_arg}",
+            if rlec.iexec(f"create-db.py --name={name} --shards={shards} --memory={memory} {sparse_arg} {repl_arg} {flash_arg}",
                           num=1, vars=vars) == 0:
                 rlec.iexec("rediscli-info.py", num=1, uid=0)
         except Exception as x:
@@ -547,7 +555,7 @@ class Node:
             vars["CNM_VER"] = rlec.cnm_version
 
             print(f"Preparing node {num}...")
-            rlec.exec(f"/v/{rlec.viewname}/arlecchino/rlec/internal/rlec-fixes", num=num, uid=0, cid=cid, vars=vars)
+            rlec.exec(f"/v/{rlec.viewname}/arlecchino/rlec/internal/rlec-fixes", num=num, uid=0, cid=cid, vars=vars, debug=None)
             print(f"Node {num} created.")
 
             self.num = num

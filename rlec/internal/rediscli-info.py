@@ -17,6 +17,7 @@ try:
         id = j["uid"]
         redis_conf = '/var/opt/redislabs/redis/redis-' + str(id) +'.conf'
         copy2(redis_conf, '/opt/view/rlec/redis.conf')
+        sh("chmod 666 /opt/view/rlec/redis.conf")
 except:
     print("Failed to process /opt/view/rlec/db.json")
 

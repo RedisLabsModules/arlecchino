@@ -184,14 +184,14 @@ class RLEC:
         d = os.path.join(self.view, "rlec")
         if not os.path.isdir(d):
             paella.mkdir_p(f"{d}")
-            sh(f"chmod 777 {d}")
-            sh(f"chmod g+s {d}")
+            sh(f"sudo chmod 777 {d}")
+            sh(f"sudo chmod g+s {d}")
             sh(f"touch {d}/.arlecchino")
             print(f"Control directory {d} created.")
             print("Note that redis-modules.yaml needs to be created for loading modules.")
         elif not os.path.exists(f"{d}/.arlecchino"):
-            sh(f"chmod -R 777 {d}")
-            sh(f"chmod g+s {d}")
+            sh(f"sudo chmod -R 777 {d}")
+            sh(f"sudo chmod g+s {d}")
 
     #------------------------------------------------------------------------------------------
 

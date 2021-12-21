@@ -302,7 +302,7 @@ def install_module(name, mod):
                     if len(sys.argv) > 0:
                         sys.exit(get_module(sys.argv[1]))
                     """
-            if mod.get('modules_v2_api', False):
+            if mod.get('modules_v2_api', True):
                 script = """
                     def get_module(module_filepath):
                         ccs = CCS.Context()

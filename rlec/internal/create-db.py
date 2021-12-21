@@ -19,12 +19,13 @@ import paella
 #----------------------------------------------------------------------------------------------
 
 parser = argparse.ArgumentParser(description='Create database')
-parser.add_argument('-n', '--name', type=str, default='db1', help='Name of database') 
-parser.add_argument('-m', '--memory', type=str, default='1g', help='Amount of RAM (default: 1g/1024m)') 
-parser.add_argument('-s', '--shards', type=int, default=1, help='Number of shards') 
+parser.add_argument('-n', '--name', type=str, default='db1', help='Name of database')
+parser.add_argument('-m', '--memory', type=str, default='1g', help='Amount of RAM (default: 1g/1024m)')
+parser.add_argument('-s', '--shards', type=int, default=1, help='Number of shards')
 parser.add_argument('-f', '--filename', type=str, default='db1.yaml', help='Database parameters filename')
 parser.add_argument('--sparse', action="store_true", help="Sparse shard placement")
 parser.add_argument('--replication', action="store_true", help="Enable replication")
+parser.add_argument('--flash', type=str, help="Enable Radis on Flash of given size")
 parser.add_argument('--no-modules', action="store_true", help="Do not install modules")
 parser.add_argument('--verbose', action="store_true", help='Show output of all commands')
 args = parser.parse_args()
@@ -41,19 +42,6 @@ class Database:
 
 #----------------------------------------------------------------------------------------------
 
-print("\nCreating database...")
-
-if args.shards > 1:
-    sharding = 'true'
-    shards = args.shards
-else:
-    sharding = 'false'
-    shards = 1
-
-replication = 'true' if args.replication else 'false'
-
-mem_units = {"kb": 10**3, "mb": 10**6, "gb": 10**9, "tb": 10**12}
-
 def memunit_to_bytes(mem):
     try:
         x = filter(lambda x: len(x) > 1, [mem.split(s) for s in mem_units.keys()])
@@ -68,6 +56,21 @@ def memunit_to_bytes(mem):
     except:
         return None
 
+#----------------------------------------------------------------------------------------------
+
+print("\nCreating database...")
+
+if args.shards > 1:
+    sharding = 'true'
+    shards = args.shards
+else:
+    sharding = 'false'
+    shards = 1
+
+replication = 'true' if args.replication else 'false'
+
+mem_units = {"kb": 10**3, "mb": 10**6, "gb": 10**9, "tb": 10**12}
+
 mem_bytes = memunit_to_bytes(args.memory)
 if mem_bytes is None:
     mem_bytes = memunit_to_bytes('1g')
@@ -75,25 +78,36 @@ if mem_bytes is None:
 mem_bytes_avail = int(psutil.virtual_memory().available/(1024**2)*0.85*(1024**2))
 mem_bytes = min(mem_bytes_avail, mem_bytes)
 mem_bytes = max(1024**2 * 512, mem_bytes)
-BB()
+
+bigstore = "true" if args.flash != "" else "false"
+bigstore_ram_size_bytes = memunit_to_bytes(args.flash)
+if bigstore_ram_size_bytes is None:
+    bigstore_ram_size_bytes = 0
+
 shards_placement = 'sparse' if args.sparse else 'dense'
 
 fields_t = r'''
 "name": "{{args.name}}",
 "port": 12000,
 "memory_size": {{mem_bytes}},
-"sharding": {{sharding}}, 
+"sharding": {{sharding}},
 "shards_count" : {{shards}},
 "shard_key_regex": [ { "regex": ".*\\{(?<tag>.*)\\}.*" }, { "regex": "(?<tag>.*)" } ],
 "replication": {{replication}},
 "shards_placement": "{{shards_placement}}",
 "proxy_policy": "all-nodes",
-"bigstore_ram_size": 536870912,
 "hash_slots_policy": "16k"
 '''
 
+fields_flash_t = r'''
+,
+"bigstore": {{bigstore}},
+"bigstore_ram_size": {{bigstore_ram_size_bytes}}
+'''
 
-# "bigstore": true,
+if bigstore:
+    fields_t += fields_flash_t
+
 # "port": 16379,
 # "oss_cluster": false,
 # "proxy_policy": "single",
@@ -136,7 +150,7 @@ else:
     print("There are errors.")
     exit(1)
 
-os.unlink('/opt/view/rlec/cnm_exec.log')
+paella.rm_rf('/opt/view/rlec/cnm_exec.log')
 shutil.copy('/var/opt/redislabs/log/cnm_exec.log', '/opt/view/rlec')
 sh("chmod 666 /opt/view/rlec/cnm_exec.log")
 print('Done.')

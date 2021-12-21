@@ -127,6 +127,7 @@ def main(debug, update, verbose, version):
 @click.option('-m', '--memory', type=str, default='1g', help='Memory (RAM)')
 @click.option('--sparse', is_flag=True, help="Use sparse shard placement")
 @click.option('--replication', is_flag=True, help="Enable replication")
+@click.option('--flash', type=str, help="Enable Radis on Flash of given size")
 @click.option('-M', '--module', 'modules', type=str, multiple=True, help='Install module from redis-modules.yaml')
 @click.option('--no-bootstrap', is_flag=True, help='Do no bootstrap')
 @click.option('--no-patch', is_flag=True, help='Do not apply patches')
@@ -139,7 +140,7 @@ def main(debug, update, verbose, version):
 @click.option('--verbose', is_flag=True, help='Show output of all commands')
 @click.option('--slow', is_flag=True, help='Do not run in parallel')
 @click.option('--debug', is_flag=True, help='Enable debug mode')
-def start(osnick, version, build, internal, nodes, shards, name, memory, sparse, replication, modules,
+def start(osnick, version, build, internal, nodes, shards, name, memory, sparse, replication, flash, modules,
           no_bootstrap, no_patch, no_db, no_modules, no_internet,
           quick, keep, verbose, slow, debug):
     if verbose:
@@ -159,7 +160,8 @@ def start(osnick, version, build, internal, nodes, shards, name, memory, sparse,
             rlec.install_modules()
         if not no_db:
             BB()
-            rlec.create_db(name=name, shards=shards, memory=memory, sparse=sparse, replication=replication)
+            rlec.create_db(name=name, shards=shards, memory=memory, sparse=sparse, replication=replication,
+                           flash=flash)
     rlec.fetch_logs()  # TODO: call fetch_logs after each operation, internally
     report_elapsed()
     exit(0)

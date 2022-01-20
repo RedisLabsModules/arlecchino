@@ -1,4 +1,5 @@
-#!/opt/redislabs/bin/python2 -O
+#!/bin/sh
+''''[ ! -z $VIRTUAL_ENV ] && exec /opt/redislabs/bin/python -O -u -- "$0" ${1+"$@"}; command -v /opt/redislabs/bin/python3 > /dev/null && exec /opt/redislabs/bin/python3 -O -u -- "$0" ${1+"$@"}; exec /opt/redislabs/bin/python2 -O -u -- "$0" ${1+"$@"} # '''
 
 import sys
 import os
@@ -79,7 +80,8 @@ mem_bytes_avail = int(psutil.virtual_memory().available/(1024**2)*0.85*(1024**2)
 mem_bytes = min(mem_bytes_avail, mem_bytes)
 mem_bytes = max(1024**2 * 512, mem_bytes)
 
-bigstore = "true" if args.flash != "" else "false"
+flash = args.flash != "" and args.flash is not None
+bigstore = "true" if flash is True else "false"
 bigstore_ram_size_bytes = memunit_to_bytes(args.flash)
 if bigstore_ram_size_bytes is None:
     bigstore_ram_size_bytes = 0
@@ -105,7 +107,7 @@ fields_flash_t = r'''
 "bigstore_ram_size": {{bigstore_ram_size_bytes}}
 '''
 
-if bigstore:
+if flash:
     fields_t += fields_flash_t
 
 # "port": 16379,

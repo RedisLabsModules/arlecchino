@@ -344,10 +344,11 @@ class RLEC:
                 return x.returncode
 
     def iexec(self, cmd, uid=None, cid=None, num=None, vars={}, out=False, debug=False):
-        if debug or os.getenv('BB', '0') == '1':
-            if '.py' in cmd:
-                cmd = "/opt/redislabs/python -O -m pudb " + cmd
-        return self.exec(f"{self.internal}/{cmd}", uid=uid, cid=cid, num=num, vars=vars, out=out, debug=debug)
+        if (debug or os.getenv('BB', '0') == '1') and '.py' in cmd:
+            cmd = f"/opt/redislabs/bin/python -O -m pudb {self.internal}/{cmd}"
+        else:
+            cmd = f"{self.internal}/{cmd}"
+        return self.exec(cmd, uid=uid, cid=cid, num=num, vars=vars, out=out, debug=debug)
 
 #----------------------------------------------------------------------------------------------
 
@@ -399,7 +400,7 @@ class Cluster(object):
                     rlec.stop_cluster()
             except:
                 pass
-            print(f"Error creating RLEC cluster: {x}")
+            print("Error creating RLEC cluster: {x}".format(x))
             raise RuntimeError(f"Error creating RLEC cluster: {x}")
 
     #------------------------------------------------------------------------------------------

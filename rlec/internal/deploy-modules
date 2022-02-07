@@ -13,5 +13,9 @@ fi
 
 # rm -f /opt/redislabs/lib/modules/*
 
+OP=""
 echo "Installing modules..."
-/opt/view/arlecchino/rlec/internal/install-modules.py --yaml /opt/view/rlec/$YAML --modinfo /opt/view/rlec/modules.json
+if [[ $BB == 1 ]]; then
+	OP="/opt/redislabs/bin/python -O -m pudb"
+fi
+$OP /opt/view/arlecchino/rlec/internal/install-modules.py --yaml /opt/view/rlec/$YAML --modinfo /opt/view/rlec/modules.json

@@ -34,6 +34,7 @@ MOD_DIR="/opt/redislabs/lib/modules"
 MODULE_LIB_DIR="/opt/redislabs/lib/modules/lib"
 REDIS_LIBS_DIR="/opt/redislabs/lib"
 DL_DIR="/tmp"
+MOD_PATH_INT_PREFIX="/opt/view/"
 
 #----------------------------------------------------------------------------------------------
 
@@ -215,16 +216,19 @@ def install_module(name, mod):
             zipdest = dest
 
         if 'path' in mod:
+            mod_path = mod['path']
+            if not os.path.isabs(mod_path):
+                mod_path = MOD_PATH_INT_PREFIX + mod_path
             if NOP:
                 if destfile:
-                    print("copying " + mod['path'] + " to " + destfile)
+                    print("copying {SRC} to {DEST}".format(SRC=mod_path, DEST=destfile))
                 else:
-                    print("copying " + mod['path'] + " into " + zipdest)
+                    print("copying {SRC} into {DEST}".format(SRC=mod_path, DEST=zipdest))
             else:
                 if dname == "":
-                    dname = os.path.basename(mod['path'])
+                    dname = os.path.basename(mod_path)
                     if dname == "":
-                        dname = os.path.basename(os.path.dirname(mod['path']))
+                        dname = os.path.basename(os.path.dirname(mod_path))
                 dpath = os.path.join(zipdest, dname)
                 if os.path.exists(dpath):
                     if os.path.isdir(dpath):
@@ -232,10 +236,10 @@ def install_module(name, mod):
                     else:
                         os.remove(dpath)
                 mkdir_and_chown(zipdest, "redislabs:redislabs")
-                if os.path.isdir(mod['path']):
-                    copytree(mod['path'], dpath)
+                if os.path.isdir(mod_path):
+                    copytree(mod_path, dpath)
                 else:
-                    copy2(mod['path'], dpath)
+                    copy2(mod_path, dpath)
                     zipf = dpath
                 os.system("chown -R redislabs:redislabs {}".format(dpath))
         elif 'awspath' in mod:

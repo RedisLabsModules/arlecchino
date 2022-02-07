@@ -37,9 +37,12 @@ def try_bootstrap(args):
         subprocess.check_call(['/opt/view/arlecchino/rlec/internal/wait-for-service', 'ccs'])
         
         # select latest redis-server as default
-        latest_redis = paella.sh('ls /opt/redislabs/bin/redis-server-* | grep -E "redis-server-[0-9]+\.[0-9]+$" | cut -d- -f3 | sort -n -r | head -1')
-        paella.sh("rladmin tune cluster redis_upgrade_policy latest")
-        paella.sh("rladmin tune cluster default_redis_version {ver}".format(ver=latest_redis))
+        try:
+            latest_redis = paella.sh('ls /opt/redislabs/bin/redis-server-* | grep -E "redis-server-[0-9]+\.[0-9]+$" | cut -d- -f3 | sort -V -r | head -1')
+            paella.sh("rladmin tune cluster redis_upgrade_policy latest")
+            paella.sh("rladmin tune cluster default_redis_version {ver}".format(ver=latest_redis))
+        except:
+            pass
 
         return True
     except subprocess.CalledProcessError as x:

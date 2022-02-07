@@ -108,7 +108,7 @@ def main(debug, update, verbose, version):
         exit(0)
     if update:
         print("Updating Arlecchino...")
-        paella.sh(f"cd {ROOT}/arlecchino; git pull --quiet --recurse-submodules")
+        paella.sh(f"cd {ROOT}; git pull --quiet --recurse-submodules")
         print("Done.")
         exit(0)
     if verbose:

@@ -7,11 +7,11 @@ import subprocess
 import time
 import argparse
 
-
 from rlec_auto import *
 
 sys.path.insert(0, "/opt/readies")
 import paella
+BB()
 
 RLEC_CLUSTER_NAME = "rlec1"
 RLEC_USER = "a@a.com"
@@ -31,7 +31,7 @@ def try_bootstrap(args):
         cmd = ['/opt/redislabs/bin/rladmin', 'cluster', 'create', 
                'name', RLEC_CLUSTER_NAME, 
                'username', RLEC_USER, 'password', RLEC_PWD]
-        if args.flash != "":
+        if flash:
              cmd += ['flash_enabled', 'flash_path', '/var/opt/redislabs/flash']
         output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
         subprocess.check_call(['/opt/view/arlecchino/rlec/internal/wait-for-service', 'ccs'])

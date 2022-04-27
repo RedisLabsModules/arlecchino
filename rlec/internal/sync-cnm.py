@@ -16,6 +16,7 @@ from rlec_auto import *
 
 sys.path.insert(0, "/opt/readies")
 import paella
+BB()
 
 def chown(path, u, g):
     if isinstance(u, int):

@@ -79,11 +79,11 @@ class Command1(click.Command):
 
 Input files:
 rlec.yaml           Cluster creation parameters
-redis-modules.yaml  Redis modules for installation
+redis-modules.yml  Redis modules for installation
 
 Output files:
 RLEC      Docker ID of master node
-db1.yaml  Database attributes
+db1.yml   Database attributes
 
 Variables:
 RLEC         Root of RLEC view
@@ -111,8 +111,7 @@ def main(debug, update, verbose, version):
         paella.sh(f"cd {ROOT}; git pull --quiet --recurse-submodules")
         print("Done.")
         exit(0)
-    if verbose:
-        ENV['VERBOSE'] = "1"
+    setup_env(verbose, debug)
 
 #----------------------------------------------------------------------------------------------
 
@@ -128,7 +127,7 @@ def main(debug, update, verbose, version):
 @click.option('--sparse', is_flag=True, help="Use sparse shard placement")
 @click.option('--replication', is_flag=True, help="Enable replication")
 @click.option('--flash', type=str, help="Enable Radis on Flash of given size")
-@click.option('-M', '--module', 'modules', type=str, multiple=True, help='Install module from redis-modules.yaml')
+@click.option('-M', '--module', 'modules', type=str, multiple=True, help='Install module from redis-modules.yml')
 @click.option('--no-bootstrap', is_flag=True, help='Do no bootstrap')
 @click.option('--no-patch', is_flag=True, help='Do not apply patches')
 @click.option('--no-db', is_flag=True, help='Do not create database')
@@ -143,8 +142,7 @@ def main(debug, update, verbose, version):
 def start(osnick, version, build, internal, nodes, shards, name, memory, sparse, replication, flash, modules,
           no_bootstrap, no_patch, no_db, no_modules, no_internet,
           quick, keep, verbose, slow, debug):
-    if verbose:
-        ENV['VERBOSE'] = "1"
+    setup_env(verbose, debug)
     rlec = RLEC(osnick=osnick, version=version, build=build, internal=internal)
     if rlec.is_running():
         print("RLEC docker already running.")
@@ -310,7 +308,7 @@ def rm_node():
 @click.option('-n', '--name', type=str, default='db1', help='Name of database')
 @click.option('-m', '--memory', type=str, default='1g', help='Amount of RAM (default: 1g/1024m)')
 @click.option('-s', '--shards', type=int, default=1, help='Number of shards')
-@click.option('-f', '--filename', type=str, default='db1.yaml', help='Database parameters filename')
+@click.option('-f', '--filename', type=str, default='db1.yml', help='Database parameters filename')
 @click.option('--sparse', is_flag=True, help="Sparse shard placement")
 @click.option('--replication', is_flag=True, help="Enable replication")
 @click.option('--no-modules', is_flag=True, help="Do not install modules")
@@ -319,6 +317,7 @@ def rm_node():
 # def create_db(name, memory, shards, filename, sparse, replication, no_modules, verbose, *args, **kwargs):
 def create_db(*args, **kwargs):
     BB()
+    setup_env(verbose, debug)
     rlec = RLEC()
     if not rlec.is_running():
         print("RLEC docker not running.")

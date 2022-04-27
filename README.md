@@ -14,13 +14,13 @@
 
 * A machine with at least 16GB RAM (cloud machines will work fine)
 * Python 3.6 or higher
-* Docker installation that can operate with volumes (i.e., `docker run -v /v:/v ...`)
+* Docker installation that can operate with volumes (i.e., `docker run -v /v:/v ...`): this can actually be arranged after Arlecchino is installed - so if you don't have Docker installed, don't install it just now - we'll handle it later.
 * A directory on your filesystem, designated as a **view directory**
 * Permissions to access [RedisLabs Dockerhub Internal Repo](https://hub.docker.com/repository/docker/redislabs/redis-internal/tags) (optional)
 
 ## Fellas, I'm ready to get up and do my thing
 
-First, let's create a **view directory**, which is simply a directory that will hold your cloned Git repos of Redis Modules (and some more stuff we'll soon encounter), and actually act as a point of reference to the RLEC instances we'll be running.
+First, let's create a **view directory**, which is simply a directory that will hold your cloned Git repos of Redis Modules (and some more stuff we'll soon encounter), and actually act as a point of reference to the RLEC instances we'll be running. For some users, the home directory can function as a view directory.
 
 We'll first see how to run a single node RLEC instance without modules, and then add more nodes and modules to the pan.
 
@@ -33,12 +33,7 @@ bash <(curl -fsSL http://tiny.cc/arlecchino)
 
 This will also introduce the `rlec` command which will allow us to operate the cluster.
 
-Next, gain root privileges to invoke Docker:
-```
-sudo bash
-```
-
-Then, without delay, invoke your first `rlec` command:
+Next, let's invoke your first `rlec` command:
 ```
 rlec start
 ```
@@ -49,7 +44,7 @@ Let's look at the output:
 
 ```
 Control directory /view/rlec created.
-Note that redis-modules.yaml needs to be created for loading modules.
+Note that redis-modules.yml needs to be created for loading modules.
 Using redislabs/redis:6.0.20-97.bionic
 Preparing node 1...
 Node 1 created.
@@ -125,45 +120,45 @@ DOCKER_HOST  Host running Docker server (localhost if undefined)
 
 ## Redis modules
 
-We can now turn to loading modules into RS. We use YAML file named ```redis-modules.yaml``` to control which modules are installed and where to fetch them from:
+We can now turn to loading modules into RS. We use YAML file named ```redis-modules.yml``` to control which modules are installed and where to fetch them from:
 
 ```
 redisearch:
-    path: /opt/view/RedisSearch/redisearch-enterprise.zip
+    path: RedisSearch/bin/artifacts/redisearch.Linux-ubuntu18.04-x86_64.99.99.99.zip
     module: yes
 redisgraph:
-    path: /opt/view/RedisGraph/redisgraph.zip
+    path: RedisGraph/bin/artifacts/redisgraph.Linux-ubuntu18.04-x86_64.99.99.99.zip
     module: yes
 rejson:
-    path: /opt/view/RedisJSON/rejson.zip
+    path: RedisJSON/bin/artifacts/rejson.Linux-ubuntu18.04-x86_64.99.99.99.zip
     module: yes
 rebloom:
-    path: /opt/view/RedisBloom/rebloom.zip
+    path: RedisBloom/bin/artifacts/rebloom.Linux-ubuntu18.04-x86_64.99.99.99.zip
     module: yes
 redisgears:
-    path: /opt/view/RedisGears/bin/linux-x64-release/redisgears.Linux-x86_64.latest.zip
+    path: RedisGears/bin/artifacts/redisgears.Linux-x86_64.99.99.99.zip
     module: yes
 redisgears-deps:
-    path: /opt/view/RedisGears/artifacts/release/redisgears-dependencies.Linux-x86_64.latest.tgz
+    path: RedisGears/bin/artifacts/redisgears-dependencies.Linux-x86_64.99.99.99.tgz
     dest: /
     unzip: yes
 redistimeseries:
-    path: /opt/view/RedisTimeSeries/redistimeseries.zip
+    path: RedisTimeSeries/bin/artifacts/redistimeseries.Linux-ubuntu18.04-x86_64.99.99.99.zip
     module: yes
 redisai:
-    path: /opt/view/RedisAI/build/redisai.zip
+    path: RedisAI/bin/actifacts/redisai.Linux-ubuntu18.04-x86_64.99.99.99.zip
     module: yes
 redisai-deps:
-    path: /opt/view/RedisAI/build/redisai-dependencies.tar.gz
+    path: RedisAI/bin/artifacts/redisai-dependencies.Linux-ubuntu18.04-x86_64.99.99.99.tar.gz
     dest: /opt/redislabs/lib/modules/lib
     unzip: yes 
 ```
 
-The ```redis-modules.yaml``` file resides in the RLEC control directory. We can copy a general template from ```modullaneous/rlec-mod-install/redis-modules-docker.yaml``` (relative to the view directory) and simply comment out modules we don't need. Actually, modules that will be missing during the RS container startup will be ignored, so we may just leave the template as it is.
+The ```redis-modules.yml``` file resides in the RLEC control directory. We can copy a general template from ```modullaneous/rlec-mod-install/redis-modules-docker.yml``` (relative to the view directory) and simply comment out modules we don't need. Actually, modules that will be missing during the RS container startup will be ignored, so we may just leave the template as it is.
 
 Sharp-eyed readers will notice the ```/opt/view``` path in the YAML file. This is simply how the RS container sees the our host view directory (it is mapped as a volume).
 
-So we can now put ```redis-modules.yaml``` in its place and repeat the creation process.
+So we can now put ```redis-modules.yml``` in its place and repeat the creation process.
 
 If an RS instance is still running, ```rlec-start``` will complain, so just use ```rlec-stop``` to stop the previous instance.
 

@@ -11,6 +11,7 @@ from rlec_auto import *
 
 sys.path.insert(0, "/opt/readies")
 import paella
+BB()
 
 try:
     with open('/opt/view/rlec/db.json', 'r') as jfile:

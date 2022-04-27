@@ -5,7 +5,7 @@ umask 002
 if [[ -f /opt/view/rlec/S3 ]]; then
 	YAML=s3-redis-modules.yaml
 else
-	YAML=redis-modules.yaml
+	YAML=redis-modules.yml
 fi
 
 [[ -f /opt/view/rlec/NOMODULES ]] && { echo "Skipping modules installation." ; exit 0; }

@@ -16,6 +16,7 @@ from rlec_auto import *
 
 sys.path.insert(0, "/opt/readies")
 import paella
+BB()
 
 #----------------------------------------------------------------------------------------------
 
@@ -23,7 +24,7 @@ parser = argparse.ArgumentParser(description='Create database')
 parser.add_argument('-n', '--name', type=str, default='db1', help='Name of database')
 parser.add_argument('-m', '--memory', type=str, default='1g', help='Amount of RAM (default: 1g/1024m)')
 parser.add_argument('-s', '--shards', type=int, default=1, help='Number of shards')
-parser.add_argument('-f', '--filename', type=str, default='db1.yaml', help='Database parameters filename')
+parser.add_argument('-f', '--filename', type=str, default='db1.yml', help='Database parameters filename')
 parser.add_argument('--sparse', action="store_true", help="Sparse shard placement")
 parser.add_argument('--replication', action="store_true", help="Enable replication")
 parser.add_argument('--flash', type=str, help="Enable Radis on Flash of given size")
@@ -137,16 +138,27 @@ resj = json.loads(res.content)
 fwrite('/opt/view/rlec/db.json', json.dumps(resj, indent=4))
 
 if not args.no_modules:
-    modnames = yaml_load('/opt/view/rlec/redis-modules.yaml').keys()
-    if len(modnames) > 0:
-        log = subprocess.check_output('egrep -i "{}" /var/opt/redislabs/log/*'.format("|".join(modnames)), shell=True)
-        fwrite('/opt/view/rlec/db-create.log', log)
+    try:
+        modyml = yaml_load('/opt/view/rlec/redis-modules.yml')
+    except:
+        try:
+            modyml = yaml_load('/opt/view/rlec/redis-modules.yaml')
+        except:
+            eprint("redis-modules.yml file not found")
+            modyml = None
+    if modyml is not None:
+        modnames = modyml.keys()
+        if len(modnames) > 0:
+            log = subprocess.check_output('egrep -i "{}" /var/opt/redislabs/log/* || true'.format("|".join(modnames)), shell=True)
+            fwrite('/opt/view/rlec/db-create.log', log)
+    else:
+        eprint("Modules not loaded")
 
 if os.path.exists('/opt/view/rlec/db.json'):
     if 'error_code' in resj:
         if resj['error_code'] != "":
-            print("There are errors:")
-            print(resj['description'])
+            eprint("There are errors:")
+            eprint(resj['description'])
             exit(1)
 else:
     print("There are errors.")

@@ -7,11 +7,11 @@ import subprocess
 import time
 import argparse
 
-
 from rlec_auto import *
 
 sys.path.insert(0, "/opt/readies")
 import paella
+BB()
 
 RLEC_USER = "a@a.com"
 RLEC_PWD = "a"

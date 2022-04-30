@@ -78,7 +78,7 @@ class Command1(click.Command):
         return r'''
 
 Input files:
-rlec.yaml           Cluster creation parameters
+rlec.yaml          Cluster creation parameters
 redis-modules.yml  Redis modules for installation
 
 Output files:
@@ -86,8 +86,8 @@ RLEC      Docker ID of master node
 db1.yml   Database attributes
 
 Variables:
-RLEC         Root of RLEC view
-DOCKER_HOST  Host running Docker server (tcp://127.0.0.1:2375 if undefined)
+RLEC          Root of RLEC view
+DOCKER_HOST   Host running Docker server (tcp://127.0.0.1:2375 if undefined)
 
 '''
 
@@ -102,7 +102,9 @@ DOCKER_HOST  Host running Docker server (tcp://127.0.0.1:2375 if undefined)
 @click.option('--update', is_flag=True, help='Check for updates')
 @click.option('--verbose', is_flag=True, help='Show output of all commands')
 @click.option('--version', is_flag=True, help='Show version')
-def main(debug, update, verbose, version):
+@click.option('--debug', is_flag=True, help='Debug internal RLEC script')
+@click.option('--slow', is_flag=True, help='Do not run in parallel')
+def main(debug, update, verbose, version, slow):
     if version:
         print(f"Arlecchino {VERSION}")
         exit(0)
@@ -111,7 +113,7 @@ def main(debug, update, verbose, version):
         paella.sh(f"cd {ROOT}; git pull --quiet --recurse-submodules")
         print("Done.")
         exit(0)
-    setup_env(verbose, debug)
+    setup_env(verbose, debug, slow)
 
 #----------------------------------------------------------------------------------------------
 
@@ -138,26 +140,26 @@ def main(debug, update, verbose, version):
 # @click.option('--show-platforms', is_flag=True, help='Show RLEC platforms')
 @click.option('--verbose', is_flag=True, help='Show output of all commands')
 @click.option('--slow', is_flag=True, help='Do not run in parallel')
+@click.option('--refix', is_flag=True, help='Recreate fixed images')
 @click.option('--debug', is_flag=True, help='Enable debug mode')
 def start(osnick, version, build, internal, nodes, shards, name, memory, sparse, replication, flash, modules,
           no_bootstrap, no_patch, no_db, no_modules, no_internet,
-          quick, keep, verbose, slow, debug):
-    setup_env(verbose, debug)
-    rlec = RLEC(osnick=osnick, version=version, build=build, internal=internal)
+          quick, keep, verbose, slow, refix, debug):
+    setup_env(verbose, debug, slow)
+    rlec = global_rlec(RLEC(osnick=osnick, version=version, build=build, internal=internal))
     if rlec.is_running():
         print("RLEC docker already running.")
         exit(1)
     print(f"Using {rlec.docker_image}")
     BB()
     rlec.create_cluster(no_modules=True, no_internet=no_internet, no_patch=no_patch,
-                        no_bootstrap=no_bootstrap, keep=keep, debug=debug)
+                        no_bootstrap=no_bootstrap, keep=keep, refix=refix)
     if not no_bootstrap:
         if nodes > 1:
             rlec.add_nodes(range(2, 2 + nodes - 1), no_patch=no_patch)
         if not no_modules:
             rlec.install_modules()
         if not no_db:
-            BB()
             rlec.create_db(name=name, shards=shards, memory=memory, sparse=sparse, replication=replication,
                            flash=flash)
     rlec.fetch_logs()  # TODO: call fetch_logs after each operation, internally
@@ -168,7 +170,7 @@ def start(osnick, version, build, internal, nodes, shards, name, memory, sparse,
 
 @main.command(help='Stop RLEC cluster', cls=Command1)
 def stop():
-    rlec = RLEC()
+    rlec = global_rlec()
     if not rlec.is_running():
         print("RLEC docker not running.")
         exit(1)
@@ -183,7 +185,7 @@ def stop():
 @click.option('-a', '--admin', is_flag=True, help="Run rladmin status")
 @click.option('-s', '--services', is_flag=True, help="Run supervisorctl status")
 def status(admin, services):
-    rlec = RLEC()
+    rlec = global_rlec()
     if not rlec.is_running():
         print("RLEC docker is not running.")
         exit(1)
@@ -202,7 +204,7 @@ def status(admin, services):
 
 @main.command(help='Run rladmin')
 def admin(*args):
-    rlec = RLEC()
+    rlec = global_rlec()
     if not rlec.is_running():
         print("RLEC docker is not running.")
         exit(1)
@@ -219,7 +221,7 @@ def admin(*args):
 def shell(node, command):
     BB()
     command = list(command)
-    rlec = RLEC()
+    rlec = global_rlec()
     if not rlec.is_running():
         print("RLEC docker not running.")
         exit(1)
@@ -256,7 +258,7 @@ def cli(node, db):
 
 @main.command(help='Fetch RLEC logs', cls=Command1)
 def logs():
-    rlec = RLEC()
+    rlec = global_rlec()
     if not rlec.is_running():
         print("RLEC docker not running.")
         exit(1)
@@ -279,7 +281,7 @@ def logs():
 @click.option('--reshard', is_flag=True, help='Reshard after adding nodes')
 @click.argument('node-nums', type=int, nargs=-1)#, help='Node numbers')
 def add_node(osnick, version, build, internal, memory, join, no_join, patch, verbose, slow, reshard, node_nums):
-    rlec = RLEC(osnick=osnick, version=version, build=build, internal=internal)
+    rlec = global_rlec(RLEC(osnick=osnick, version=version, build=build, internal=internal))
     if not rlec.is_running():
         print("RLEC docker is not running.")
         exit(1)
@@ -314,14 +316,10 @@ def rm_node():
 @click.option('--no-modules', is_flag=True, help="Do not install modules")
 @click.option('--verbose', is_flag=True, help='Show output of all commands')
 @click.option('--debug', is_flag=True, help='Debug internal RLEC script')
+@click.option('--slow', is_flag=True, help='Do not run in parallel')
 # def create_db(name, memory, shards, filename, sparse, replication, no_modules, verbose, *args, **kwargs):
 def create_db(*args, **kwargs):
     BB()
-    setup_env(verbose, debug)
-    rlec = RLEC()
-    if not rlec.is_running():
-        print("RLEC docker not running.")
-        exit(1)
     _args = ''
     for k, v in kwargs.items():
         if k == 'debug':
@@ -339,6 +337,12 @@ def create_db(*args, **kwargs):
     #_args += ' --no-modules' if no_modules else ''
     verbose = kwargs['verbose']
     debug = kwargs['debug']
+    slow = kwargs['slow']
+    rlec = global_rlec()
+    if not rlec.is_running():
+        print("RLEC docker not running.")
+        exit(1)
+    setup_env(verbose, debug, slow)
     node = Node(num=1)
     return os.system(f"docker exec -u 0 -it {node.cid} bash -c \"{'BB=pudb' if debug else ''} /opt/view/arlecchino/rlec/internal/create-db.py {_args}\"")
 

@@ -37,7 +37,11 @@ if len(sys.argv) == 1:
 version = sys.argv[1]
 	
 src = '/opt/view/arlecchino/rlec/' + version
-dest = '/opt/redislabs/lib/python2.7/site-packages'
+if sys.version_info > (3, 0):
+    pyroot = paella.sh('echo $(cd /opt/redislabs/lib/python* && pwd)')
+else:
+    pyroot = '/opt/redislabs/lib/python2.7
+dest = '{pyroot}/site-packages'.format(pyroot=pyroot)
 
 if not os.path.exists(dest + '/cnm/CNM.pyo'):
     dest = '/opt/redislabs/lib'

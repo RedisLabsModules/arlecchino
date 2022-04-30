@@ -47,7 +47,7 @@ args = parser.parse_args()
 
 print("Joining cluster...")
 for i in range(3):
-    if try_join(args.master, args=args):
+    if try_join(args.master[0], args=args):
         print("Done.")
         exit(0)
     time.sleep(3)

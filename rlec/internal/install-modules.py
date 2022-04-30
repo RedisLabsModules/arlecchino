@@ -359,10 +359,13 @@ def install_module(name, mod):
                         sys.exit(get_module(sys.argv[1]))
                     """
             fd, script_path = tempfile.mkstemp()
-            os.write(fd, dedent(script_base) + dedent(script))
+            _script = dedent(script_base) + dedent(script)
+            if sys.version_info > (3, 0):
+                _script = _script.encode()
+            os.write(fd, _script)
             os.close(fd)
             try:
-                xx = subprocess.check_output('/bin/bash -c \'/opt/redislabs/bin/python2 -O {} {}\''.format(script_path, zipf), shell=True)
+                xx = subprocess.check_output('/bin/bash -c \'/opt/redislabs/bin/python -O {} {}\''.format(script_path, zipf), shell=True)
                 if VERBOSE:
                     print(xx)
             except subprocess.CalledProcessError as x:

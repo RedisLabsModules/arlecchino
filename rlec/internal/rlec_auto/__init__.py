@@ -11,14 +11,6 @@ from .info import *
 
 #----------------------------------------------------------------------------------------------
 
-def fread(fname):
-    with open(fname, 'r') as file:
-        return file.read()
-
-def fwrite(fname, str):
-    with open(fname, "w") as file:
-        file.write(str)
-
 def yaml_load(fname):
     with open(fname, "r") as file:
         return yaml.load(file, Loader=yaml.FullLoader)

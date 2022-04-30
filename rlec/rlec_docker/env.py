@@ -7,9 +7,11 @@ READIES = os.path.join(ROOT, "readies")
 sys.path.insert(0, READIES)
 import paella
 
-def setup_env(verbose, debug):
+def setup_env(verbose, debug, slow):
     if verbose:
         ENV['VERBOSE'] = "1"
     if debug:
-        ENV['DEBUG'] = "1"
+        # ENV['DEBUG'] = "1"
         ENV['BB'] = "1"
+    if slow:
+        ENV['SLOW'] = "1"

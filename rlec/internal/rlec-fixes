@@ -2,12 +2,24 @@
 
 umask 002
 
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+PROGNAME="${BASH_SOURCE[0]}"
+HERE="$(cd "$(dirname "$PROGNAME")" &>/dev/null && pwd)"
 view=$(cd $HERE/../../.. && pwd)
 
 ln -sf $view /opt/view
 ln -s /opt/view/arlecchino/readies /opt/readies
 READIES=/opt/readies
+. $READIES/shibumi/defs
+
+[[ -e /opt/view/rlec/DEBUG ]] && DEBUG=1
+
+if [[ $PROLOG == 1 && $DEBUG == 1 ]]; then
+	$READIES/bin/getget
+
+	echo "Installing bashdb..."
+	$READIES/bin/getbashdb
+	exit 0
+fi
 
 if [[ -e /opt/view/rlec/NOPATCH ]]; then
 	NO_PATCH=1
@@ -34,36 +46,48 @@ if [[ ! -z $(command -v apt-get) ]]; then
 	echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
 fi
 
-if [[ -e /opt/view/rlec/DEBUG ]]; then
-	export PYTHONWARNINGS='ignore:DEPRECATION::pip._internal.cli.base_command'
-	if [[ ! -z $(command -v apt-get) ]]; then
-		apt-get -qq install -o=Dpkg::Use-Pty=0 -y jq ca-certificates 2>&1 > /tmp/install.log
-		[[ $? != 0 ]] && cat /tmp/install.log
-	else
-		yum install -q -y jq ca-certificates 2>&1 > /tmp/install.log
-		[[ $? != 0 ]] && cat /tmp/install.log
-	fi
+export PYTHONWARNINGS='ignore:DEPRECATION::pip._internal.cli.base_command'
 
-	echo "Installing pip..."
+[[ $DEBUG != 1 ]] && $READIES/bin/getget
+
+if is_command apt-get; then
+	runn apt-get install -o=Dpkg::Use-Pty=0 -y jq
+else
+	runn yum install -y jq
+fi
+
+echo "Installing pip..."
+PYTHON_VER="$(python --version 2>&1 | awk '{print $2}' | cut -d. -f1)"
+if [[ $PYTHON_VER == 2 ]]; then
 	MYPY=/opt/redislabs/bin/python $READIES/bin/getpy2
-	# curl -s https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
-	# /opt/redislabs/bin/python /tmp/get-pip.py -q
-	/opt/redislabs/bin/python -m pip install -q yq
-	# wget -O /opt/redislabs/bin/yq https://github.com/mikefarah/yq/releases/download/3.1.1/yq_linux_amd64
-	# chmod +x /opt/redislabs/bin/yq 
+else
+	MYPY=/opt/redislabs/bin/python $READIES/bin/getpy3
+	ln -sf /opt/redislabs/bin/python /usr/local/bin/python3
+fi
+runn /opt/redislabs/bin/python -m pip install yq
+
+if [[ $DEBUG == 1 ]]; then
 	echo "Installing bashdb..."
 	$READIES/bin/getbashdb
+
 	echo "Installing pudb..."
-	NO_PY3=1 $READIES/bin/getpudb
+	if [[ $PYTHON_VER == 2 ]]; then
+		NO_PY3=1 $READIES/bin/getpudb
+	else
+		NO_PY2=1 $READIES/bin/getpudb
+	fi
+	if [[ ! -f /opt/redislabs/.config/pudb/pudb.cfg ]]; then
+		mkdir -p /opt/redislabs/.config/pudb
+		cp -R /root/.config/pudb/pudb.cfg /opt/redislabs/.config/pudb
+		chown -R redislabs:redislabs /opt/redislabs/.config/pudb
+	fi
 
 	echo "Debugging is enalbed: installing  mc htop tmux..."
-	if [[ ! -z $(command -v apt-get) ]]; then
-		apt-get -qq update
-		apt-get -qq install -y mc htop tmux 2>&1 > /tmp/apt.log
+	if is_command apt-get; then
+		runn apt-get install -y mc htop tmux
 	else
-		yum -q install -y mc htop tmux 2>&1 > /tmp/install.log
+		runn yum install -y mc htop tmux
 	fi
-	[[ $? != 0 ]] && cat /tmp/apt.log
 fi
 
 # echo "Installing packages..."

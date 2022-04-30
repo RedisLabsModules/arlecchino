@@ -46,14 +46,14 @@ class Database:
 
 def memunit_to_bytes(mem):
     try:
-        x = filter(lambda x: len(x) > 1, [mem.split(s) for s in mem_units.keys()])
+        x = list(filter(lambda x: len(x) > 1, [mem.split(s) for s in mem_units.keys()]))
         if x == []:
-            x = filter(lambda x: len(x) > 1, [mem.split(s[0]) for s in mem_units.keys()])
+            x = list(filter(lambda x: len(x) > 1, [mem.split(s[0]) for s in mem_units.keys()]))
             if x == []:
                 return None
         val = x[0][0]
-        u1 = filter(lambda x: len(x) > 1, [mem.split(val) for s in mem_units.keys()])[0][1]
-        unit = mem_units[filter(lambda x: u1 in x, mem_units)[0]]
+        u1 = list(filter(lambda x: len(x) > 1, [mem.split(val) for s in mem_units.keys()]))[0][1]
+        unit = mem_units[list(filter(lambda x: u1 in x, mem_units))[0]]
         return int(val) * unit
     except:
         return None
@@ -121,7 +121,7 @@ fields = jinja2.Template(fields_t).render(locals())
 
 q=''
 if not args.no_modules and os.path.exists('/opt/view/rlec/modules.json'):
-    mod_list = fread('/opt/view/rlec/modules.json')
+    mod_list = paella.fread('/opt/view/rlec/modules.json')
 else:
     mod_list = ''
 if mod_list.strip() != '':
@@ -129,13 +129,13 @@ if mod_list.strip() != '':
 else:
     q = "{ %s }" % (fields)
 
-fwrite('/opt/view/rlec/create-db.rest', q)
+paella.fwrite('/opt/view/rlec/create-db.rest', q)
 
 with no_ssl_verification():
     res = requests.post('https://localhost:9443/v1/bdbs', data=q, headers={'Content-Type': 'application/json'}, auth=('a@a.com', 'a'))
 # res = subprocess.check_output(['curl', '-s', '-k', '-u', 'a@a.com:a', '-X', 'POST', 'https://localhost:9443/v1/bdbs', '-H', 'Content-type: application/json', '-d', '@/opt/view/rlec/create-db.rest'])
 resj = json.loads(res.content)
-fwrite('/opt/view/rlec/db.json', json.dumps(resj, indent=4))
+paella.fwrite('/opt/view/rlec/db.json', json.dumps(resj, indent=4))
 
 if not args.no_modules:
     try:
@@ -149,8 +149,8 @@ if not args.no_modules:
     if modyml is not None:
         modnames = modyml.keys()
         if len(modnames) > 0:
-            log = subprocess.check_output('egrep -i "{}" /var/opt/redislabs/log/* || true'.format("|".join(modnames)), shell=True)
-            fwrite('/opt/view/rlec/db-create.log', log)
+            log = paella.sh('egrep -i "{}" /var/opt/redislabs/log/*'.format("|".join(modnames)), fail=False)
+            paella.fwrite('/opt/view/rlec/db-create.log', log)
     else:
         eprint("Modules not loaded")
 

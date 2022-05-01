@@ -124,6 +124,13 @@ class RLEC:
             sh(f"sudo chmod -R 777 {d}")
             sh(f"sudo chmod g+s {d}")
 
+    def unfix_docker_image(self):
+        if not self.docker_image_fixed:
+            return
+        paella.sh(f"docker rmi -f {self.base_docker_image}-fixed")
+        self.docker_image = self.base_docker_image
+        self.docker_image_fixed = False
+    
     #------------------------------------------------------------------------------------------
 
     def cid(self, node_num=1):
@@ -479,6 +486,9 @@ class Node:
                 print("RLEC cluster not running.")
                 return False
 
+            if num == 1 and refix:
+                rlec.unfix_docker_image()
+
             no_inet = "--network no-internet" if rlec.no_internet() else ""
             vol = f"-v {rlec.rlec_view_root}:/v"
 
@@ -507,10 +517,6 @@ class Node:
 
             if num == 1:
                 print(f"Preparing node {num}...")
-                if refix and rlec.docker_image_fixed:
-                    paella.sh(f"docker rmi {rlec.docker_image}")
-                    rlec.docker_image = rlec.base_docker_image
-                    rlec.docker_image_fixed = False
                 if not rlec.docker_image_fixed:
                     rlec.exec(f"/v/{rlec.viewname}/arlecchino/rlec/internal/rlec-fixes", num=num, uid=0,
                               cid=cid, vars=newdict(vars, {'PROLOG': '1'}), debug=False)

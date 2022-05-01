@@ -7,7 +7,7 @@ HERE="$(cd "$(dirname "$PROGNAME")" &>/dev/null && pwd)"
 view=$(cd $HERE/../../.. && pwd)
 
 ln -sf $view /opt/view
-ln -s /opt/view/arlecchino/readies /opt/readies
+[[ ! -e /opt/readies ]] && ln -s /opt/view/arlecchino/readies /opt/readies
 READIES=/opt/readies
 . $READIES/shibumi/defs
 
@@ -59,9 +59,9 @@ fi
 echo "Installing pip..."
 PYTHON_VER="$(python --version 2>&1 | awk '{print $2}' | cut -d. -f1)"
 if [[ $PYTHON_VER == 2 ]]; then
-	MYPY=/opt/redislabs/bin/python $READIES/bin/getpy2
+	VERBOSE= MYPY=/opt/redislabs/bin/python $READIES/bin/getpy2
 else
-	MYPY=/opt/redislabs/bin/python $READIES/bin/getpy3
+	VERBOSE= MYPY=/opt/redislabs/bin/python $READIES/bin/getpy3
 	ln -sf /opt/redislabs/bin/python /usr/local/bin/python3
 fi
 runn /opt/redislabs/bin/python -m pip install yq

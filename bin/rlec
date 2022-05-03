@@ -71,6 +71,10 @@ fi
 [[ ! -d $RLEC/arlecchino/venv ]] && $RLEC/arlecchino/bin/setup-venv
 source $RLEC/arlecchino/venv/bin/activate
 
+if [[ "$*" == *"--debug"* ]]; then
+	export BB=1
+fi
+
 if [[ -z $BB || $BB == 0 ]]; then
 	{ python3 $RLEC/arlecchino/rlec $@; E=$?; } || true
 else

@@ -6,6 +6,7 @@ if [[ -f /opt/view/rlec/S3 ]]; then
 	YAML=s3-redis-modules.yaml
 else
 	YAML=redis-modules.yml
+	[[ ! -f /opt/view/rlec/$YAML ]] && YAML=redis-modules.yaml
 fi
 
 [[ -f /opt/view/rlec/NOMODULES ]] && { echo "Skipping modules installation." ; exit 0; }

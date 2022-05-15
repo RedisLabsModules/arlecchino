@@ -36,9 +36,11 @@ update_arlecchino() {
 	if [[ $UPDATE == 0 ]]; then
 		return
 	fi
-	local flast=$RLEC/rlec/.last-pull
-	if [[ -f $flast && $flast -nt 1 ]]; then
-		return
+	if [[ $UPDATE != 1 ]]; then
+		local flast=$RLEC/rlec/.last-pull
+		if [[ -f $flast && $flast -nt 1 ]]; then
+			return
+		fi
 	fi
 	local here="$PWD"
 	cd $RLEC/arlecchino
@@ -79,6 +81,10 @@ fi
 if [[ ! -d $RLEC/rlec ]]; then
 	mkdir $RLEC/rlec
 	chmod 777 $RLEC/rlec
+fi
+
+if [[ "$*" == *"--update"* ]]; then
+	UPDATE=1
 fi
 
 update_arlecchino "$@"

@@ -69,9 +69,9 @@ fi
 runn /opt/redislabs/bin/python -m pip install yq
 
 echo "Installing packages..."
-if [[ ! -z $(command -v apt-get) ]]; then
+if is_command apt-get; then
 	runn apt-get install -y -o=Dpkg::Use-Pty=0 mc htop tmux jq
-else
+elif is_command yum; then
 	runn yum install -y mc htop tmux jq
 fi
 
@@ -88,12 +88,13 @@ fi
 if [[ ! -f /opt/redislabs/.config/pudb/pudb.cfg ]]; then
 	mkdir -p /opt/redislabs/.config/pudb
 	cp -R /root/.config/pudb/pudb.cfg /opt/redislabs/.config/pudb
+	chown redislabs:redislabs /opt/redislabs/.config
 	chown -R redislabs:redislabs /opt/redislabs/.config/pudb
 fi
 
 echo "Installing gdb..."
 if is_command apt-get; then
 	runn apt-get install -y gdb gdbserver
-else
+elif is_command yum; then
 	runn yum install -y gdb gdbserver
 fi

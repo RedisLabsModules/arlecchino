@@ -178,7 +178,10 @@ class RLEC:
     def create_cluster(self, dbname='', shards=1, no_modules=False, no_internet=False,
                        no_patch=False, no_bootstrap=False, keep=False, refix=False):
         self._write_docker_image()
-        print(f"Using {self.docker_image}")
+        if refix:
+            print(f"Using {self.base_docker_image}")
+        else:
+            print(f"Using {self.docker_image}")
         if no_internet:
             paella.fwrite(f"{self.rlec_dir}/NO_INTERNET", "")
         else:

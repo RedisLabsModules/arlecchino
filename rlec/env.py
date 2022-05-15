@@ -13,7 +13,7 @@ def setup_env(args):
     if args.verbose:
         ENV['VERBOSE'] = "1"
     if args.debug:
-        # ENV['DEBUG'] = "1"
+        ENV['DEBUG'] = "1"
         ENV['BB'] = "1"
     if args.slow:
         ENV['SLOW'] = "1"

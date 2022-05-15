@@ -6,12 +6,11 @@ import os
 import sys
 from zipfile import ZipFile
 from tarfile import TarFile
+import gzip
 import yaml
 from shutil import copy2, copytree, rmtree
 from pathlib import Path
-from contextlib import contextmanager
 import urllib
-import gzip
 import shutil
 import platform
 import argparse
@@ -37,25 +36,6 @@ DL_DIR="/tmp"
 MOD_PATH_INT_PREFIX="/opt/view/"
 
 #----------------------------------------------------------------------------------------------
-
-parser = argparse.ArgumentParser(description='Install Redis Modules')
-parser.add_argument('--yaml', action="store", help='Configuration file')
-parser.add_argument('--s3-dir', action="store", help='Configuration file directory in S3', default=DEFAULT_S3_YAML_DIR)
-parser.add_argument('--s3-yaml', action="store", help='Configuration file path in S3')
-parser.add_argument('--modinfo', action="store", help='Module info JSON for DB creation')
-parser.add_argument('--nop', action="store_true", help='No operation')
-parser.add_argument('--no-bootstrap-check', action="store_true", help='void bootstrap check')
-parser.add_argument('--verbose', action="store_true", help='Speak aload work working')
-args = parser.parse_args()
-
-S3_YAML_DIR = args.s3_dir
-NOP = args.nop
-VERBOSE = args.verbose
-
-#----------------------------------------------------------------------------------------------
-
-def eprint(*args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
 
 # this is helpful for iterating over yaml keys in natural order
 def ordered_yaml_load(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):
@@ -95,46 +75,8 @@ def wget(url, dest):
         sys.exit(1)
     return file
 
-if args.yaml is None:
-    if not args.s3_yaml is None:
-        yaml_s3_path = args.s3_yaml
-    else:
-        distname = platform.linux_distribution()[0].lower()
-        print("This is " + distname)
-        if distname == 'centos linux' or distname == 'redhat':
-            dist = '-redhat'
-        elif distname == 'ubuntu' or distname == 'debian':
-            dist = '-debian'
-        else:
-            dist = ''
-
-        yaml_fname = "redis-modules" + dist + ".yaml"
-        yaml_s3_path = S3_YAML_DIR + "/" + yaml_fname
-
-    if not os.path.exists(yaml_fname):
-        wget(yaml_s3_path, os.getcwd())
-    yaml_path = yaml_fname
-else:
-    yaml_path = args.yaml
-
-with open(yaml_path, 'r') as stream:
-    try:
-        MODULES = ordered_yaml_load(stream, yaml.SafeLoader).items()
-    except:
-        MODULES = {}
-
-@contextmanager
-def cwd(path):
-    d0 = os.getcwd()
-    os.chdir(path)
-    try:
-        yield
-    finally:
-        os.chdir(d0)
-
-ZIP_UNIX_SYSTEM = 3
-
 def zip_extract_all_with_permission(zipf, target_dir):
+    ZIP_UNIX_SYSTEM = 3
     with ZipFile(zipf, 'r') as zip:
         for info in zip.infolist():
             path = zip.extract(info, target_dir)
@@ -413,6 +355,50 @@ def create_so_links():
 
 #----------------------------------------------------------------------------------------------
 
+parser = argparse.ArgumentParser(description='Install Redis Modules')
+parser.add_argument('--yaml', action="store", help='Configuration file')
+parser.add_argument('--s3-dir', action="store", help='Configuration file directory in S3', default=DEFAULT_S3_YAML_DIR)
+parser.add_argument('--s3-yaml', action="store", help='Configuration file path in S3')
+parser.add_argument('--modinfo', action="store", help='Module info JSON for DB creation')
+parser.add_argument('--nop', action="store_true", help='No operation')
+parser.add_argument('--no-bootstrap-check', action="store_true", help='void bootstrap check')
+parser.add_argument('--verbose', action="store_true", help='Speak aload work working')
+args = parser.parse_args()
+
+S3_YAML_DIR = args.s3_dir
+NOP = args.nop
+VERBOSE = args.verbose
+
+if args.yaml is None:
+    if not args.s3_yaml is None:
+        yaml_s3_path = args.s3_yaml
+    else:
+        distname = platform.linux_distribution()[0].lower()
+        print("This is " + distname)
+        if distname == 'centos linux' or distname == 'redhat':
+            dist = '-redhat'
+        elif distname == 'ubuntu' or distname == 'debian':
+            dist = '-debian'
+        else:
+            dist = ''
+
+        yaml_fname = "redis-modules" + dist + ".yaml"
+        yaml_s3_path = S3_YAML_DIR + "/" + yaml_fname
+
+    if not os.path.exists(yaml_fname):
+        wget(yaml_s3_path, os.getcwd())
+    yaml_path = yaml_fname
+else:
+    yaml_path = args.yaml
+
+with open(yaml_path, 'r') as stream:
+    try:
+        MODULES = ordered_yaml_load(stream, yaml.SafeLoader).items()
+    except:
+        MODULES = {}
+
+#----------------------------------------------------------------------------------------------
+
 is_bootstrapped = os.path.exists('/etc/opt/redislabs/node.id') or os.path.exists('/var/opt/redislabs/ephemeral_config/node.id')
 
 if not os.path.exists('/opt/redislabs/lib/modules'):
@@ -422,3 +408,4 @@ if not os.path.exists('/opt/redislabs/lib/modules'):
 install_modules()
 create_so_links()
 print("Done.")
+exit(0)

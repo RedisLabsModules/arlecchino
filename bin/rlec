@@ -11,7 +11,8 @@ else
 	READLINK=readlink
 fi
 
-HERE="$(cd "$(dirname "$($READLINK -f "${BASH_SOURCE[0]}")")" >/dev/null 2>&1 && pwd)"
+PROGNAME="${BASH_SOURCE[0]}"
+HERE="$(cd "$(dirname "$($READLINK -f "$PROGNAME")")" >/dev/null 2>&1 && pwd)"
 READIES=$(cd $HERE/../readies && pwd)
 . $READIES/shibumi/defs
 
@@ -32,10 +33,14 @@ find_rlec() {
 }
 
 update_arlecchino() {
-	flast=$RLEC/rlec/.last-pull
+	if [[ $UPDATE == 0 ]]; then
+		return
+	fi
+	local flast=$RLEC/rlec/.last-pull
 	if [[ -f $flast && $flast -nt 1 ]]; then
 		return
 	fi
+	local here="$PWD"
 	cd $RLEC/arlecchino
 	if [[ $(git rev-parse --abbrev-ref HEAD) != master ]]; then
 		return
@@ -45,6 +50,10 @@ update_arlecchino() {
 	fi
 	runn git pull --quiet --recurse-submodules
 	touch $flast
+	
+	cd "$here"
+	export UPDATE=0
+	exec "$PROGNAME" "$@"
 }
 
 if [[ -z $RLEC ]]; then
@@ -60,13 +69,19 @@ if [[ -z $RLEC ]]; then
 		fi
 	fi
 fi
+export RLEC
+
+if [[ "$*" == *"--where"* ]]; then
+	echo "$RLEC"
+	exit 0
+fi
 
 if [[ ! -d $RLEC/rlec ]]; then
 	mkdir $RLEC/rlec
 	chmod 777 $RLEC/rlec
 fi
 
-(update_arlecchino)
+update_arlecchino "$@"
 
 [[ ! -d $RLEC/arlecchino/venv ]] && $RLEC/arlecchino/bin/setup-venv
 source $RLEC/arlecchino/venv/bin/activate
@@ -75,11 +90,6 @@ if [[ "$*" == *"--debug"* ]]; then
 	export BB=1
 fi
 
-if [[ -z $BB || $BB == 0 ]]; then
-	{ python3 $RLEC/arlecchino/rlec $@; E=$?; } || true
-else
-	[[ $(uname) == Darwin && -z $LC_ALL ]] && export LC_ALL='en_US.UTF-8'
-	{ python3 -m pudb $RLEC/arlecchino/rlec/__main__.py $@; E=$?; } || true
-fi
+[[ $(uname) == Darwin && -z $LC_ALL ]] && export LC_ALL='en_US.UTF-8'
+{ cd $RLEC/arlecchino && python3 -m rlec $@; E=$?; } || true
 exit $E
-

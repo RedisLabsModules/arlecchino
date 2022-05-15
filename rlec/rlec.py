@@ -100,11 +100,11 @@ class RLEC:
         self.docker_image = docker_spec["image"]
         self.cnm_version = f"{version}-{build}"
 
-        fix_name = 'debug' if self.debug else 'fixed'
+        self.fix_name = 'debug' if self.debug else 'fixed'
         try:
-            paella.sh(f"docker image inspect {self.docker_image}-{fix_name} &> /dev/null")
+            paella.sh(f"docker image inspect {self.docker_image}-{self.fix_name} &> /dev/null")
             self.base_docker_image = self.docker_image
-            self.docker_image += f"-{fix_name}"
+            self.docker_image += f"-{self.fix_name}"
             self.docker_image_fixed = True
         except:
             self.docker_image_fixed = False

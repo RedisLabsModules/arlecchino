@@ -67,7 +67,7 @@ class Node:
                     rlec.exec(f"/v/{rlec.viewname}/arlecchino/rlec/internal/rlec-fixes", num=num, uid=0,
                               cid=cid, vars=newdict(vars, {'PROLOG': '1'}), debug=False)
                     rlec.exec(f"/v/{rlec.viewname}/arlecchino/rlec/internal/rlec-fixes", num=num, uid=0, cid=cid, vars=vars)
-                    paella.sh(f"docker commit {cid} {rlec.docker_image}-fixed")
+                    paella.sh(f"docker commit {cid} {rlec.docker_image}-{rlec.fix_name}")
                     rlec.docker_image_fixed = True
 
             print(f"Node {num} created.")

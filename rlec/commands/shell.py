@@ -1,5 +1,8 @@
+from textwrap import dedent
+
 from .common import *
 from ..rlec import global_rlec
+from ..node import Node
 
 #----------------------------------------------------------------------------------------------
 

@@ -20,6 +20,8 @@ def status(**kwargs):
     if args.admin:
         node = rlec.main_node()
         os.system(f"docker exec -u 0 -it {node.cid} bash -c 'rladmin status'")
+        print()
+        os.system(f"docker exec -u 0 -it {node.cid} bash -c 'rladmin status modules'")
         exit(0)
     if args.services:
         node = rlec.main_node()

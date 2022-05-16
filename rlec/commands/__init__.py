@@ -10,6 +10,7 @@ from .status import status
 from .db import create_db, drop_db
 
 from ..common import *
+from ..rlec import global_rlec
 
 #----------------------------------------------------------------------------------------------
 

@@ -4,6 +4,7 @@ from collections import namedtuple
 
 from ..env import *
 
+COMMIT = sh("git rev-parse --short HEAD 2>/dev/null || echo '?'")
 VERSION = '1.1.0'
 
 #----------------------------------------------------------------------------------------------
@@ -26,7 +27,7 @@ class Group1(click.Group):
              @-.
            _  )\\  _
           / \/ | \/ \
-         @/`|/\/\/|`\@    Arlecchino v{VERSION}
+         @/`|/\/\/|`\@    Arlecchino v{VERSION}-{COMMIT}
             /~~~~~\
            |  ^ ^  |      Redis Enterprise Cluster
            |   .   |      on Docker
@@ -37,7 +38,7 @@ class Group1(click.Group):
          @`   \ /   `@
                @
 
-'''.format(VERSION=VERSION)
+'''.format(VERSION=VERSION, COMMIT=COMMIT)
 
     @staticmethod
     def footer():
@@ -96,7 +97,7 @@ DOCKER_HOST   Host running Docker server (tcp://127.0.0.1:2375 if undefined)
 def main(**args_):
     args = dict_to_nt('MainArgs', args_)
     if args.version:
-        print(f"Arlecchino {VERSION}")
+        print(f"Arlecchino {VERSION}-{COMMIT}")
         exit(0)
     setup_env(args)
 

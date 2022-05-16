@@ -87,12 +87,12 @@ DOCKER_HOST   Host running Docker server (tcp://127.0.0.1:2375 if undefined)
 #----------------------------------------------------------------------------------------------
 
 @click.group(cls=Group1, name="rlec", invoke_without_command=True)
-@click.option('--debug', is_flag=True, help='Invoke debugger')
-@click.option('--update', is_flag=True, help='Check for updates')
-@click.option('--verbose', is_flag=True, help='Show output of all commands')
 @click.option('--version', is_flag=True, help='Show version')
-@click.option('--debug', is_flag=True, help='Debug internal RLEC script')
+@click.option('--where', is_flag=True, help='Show where Arlecchino view is located')
+@click.option('--verbose', is_flag=True, help='Show output of all commands')
+@click.option('--debug', is_flag=True, help='Enable debugging')
 @click.option('--slow', is_flag=True, help='Do not run in parallel')
+@click.option('--update', is_flag=True, help='Check for updates')
 def main(**args_):
     args = dict_to_nt('MainArgs', args_)
     if args.version:

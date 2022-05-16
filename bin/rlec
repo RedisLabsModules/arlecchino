@@ -44,14 +44,18 @@ update_arlecchino() {
 	fi
 	local here="$PWD"
 	cd $RLEC/arlecchino
-	if [[ $(git rev-parse --abbrev-ref HEAD) != master ]]; then
+	local branch="$(git rev-parse --abbrev-ref HEAD)"
+	if [[ $branch != master ]]; then
+		echo "Arlecchino on branch $branch - not updated"
 		return
 	fi
 	if [[ $(git diff --quiet; echo $?) == 1 ]]; then
+		echo "Arlecchino: no changes"
 		return
 	fi
 	runn git pull --quiet --recurse-submodules
 	touch $flast
+	echo "Arlecchino updated to $(git rev-parse --short HEAD)"
 	
 	cd "$here"
 	export UPDATE=0

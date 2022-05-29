@@ -36,7 +36,7 @@ class RLEC:
         self.debug = ENV['BB'] == '1'
         self.slow = ENV['SLOW'] == '1'
         self.verbose = ENV['SHOW'] == '1' or ENV['VERBOSE'] == '1' or ENV['V'] == '1'
-        
+
         self._determine_docker_image(osnick=osnick, version=version, build=build, internal=internal)
 
         debug_file = f"{self.rlec_dir}/DEBUG"
@@ -56,8 +56,8 @@ class RLEC:
         except:
             docker_spec_f = None
 
-        image_stem = 'redislabs/redis-internal' if internal else 'redislabs/redis'
         if osnick is None and version is None and docker_spec_f is not None:
+            image_stem = 'redislabs/redis-internal' if internal else 'redislabs/redis'
             docker_spec = docker_spec_f
             osnick = docker_spec["osnick"]
             version = docker_spec["version"]
@@ -66,29 +66,40 @@ class RLEC:
             if osnick is None:
                 osnick = 'bionic'
             if version is None:
-                version = RLEC_LATEST_VERSION if not internal else '100.0.0'
+                version = RLEC_LATEST_INT_VERSION if internal else RLEC_LATEST_VERSION
+                ver_build = ''
+            elif version == 'master':
+                version = RLEC_INT_BUILDS[version]['version']
+                ver_build = ''
+                internal = True
             else:
                 fullver = version
-                version, build_ = fullver.split('-')
-                if build is None and build_ !="":
-                    build = build_
-                elif build is not None and build != "" and build != build_:
-                    raise Error(f"conflicting build specs: version={fullver} build={build}")
+                try:
+                    version, ver_build = fullver.split('-')
+                except:
+                    ver_build = ''
             if build is None:
-                if internal:
-                    if version == '100.0.0':
-                        build = RLEC_INTERNAL_MASTER_BUILD
+                if ver_build != '':
+                    build = ver_build
                 else:
-                    if version == RLEC_LATEST_VERSION:
-                        build = RLEC_LATEST_BUILD
-            if build is None:
-                raise Error("cannot determine build number")
+                    try:
+                        if internal:
+                            build = RLEC_INT_BUILDS[version]['build']
+                        else:
+                            build = RLEC_BUILDS[version]['build']
+                    except:
+                        pass
+                    if build == '':
+                        raise Error(f"cannot determine build number for version={fullver}")
+            elif build != '' and build != ver_build:
+                raise Error(f"conflicting build specs: version={fullver} build={build}")
 
             try:
                 rlec_os = RLEC_OS[osnick]
             except:
                 raise Error(f"incompatible OS specified: {osnick}")
 
+            image_stem = 'redislabs/redis-internal' if internal else 'redislabs/redis'
             docker_spec = { "image": f"{image_stem}:{version}-{build}.{rlec_os}",
                              "osnick": osnick,
                              "version": version,
@@ -108,7 +119,7 @@ class RLEC:
             self.docker_image_fixed = True
         except:
             self.docker_image_fixed = False
-        
+
 
     def _write_docker_image(self):
         docker_spec_f = None
@@ -138,7 +149,7 @@ class RLEC:
         paella.sh(f"docker rmi -f {self.base_docker_image}-debug")
         self.docker_image = self.base_docker_image
         self.docker_image_fixed = False
-    
+
     #------------------------------------------------------------------------------------------
 
     def cid(self, node_num=1):

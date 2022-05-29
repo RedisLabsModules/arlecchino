@@ -2,21 +2,37 @@ import os
 import sys
 import os.path
 import argparse
+import datetime
 import subprocess
 import time
 from glob import glob
 import json
 from multiprocessing import Pool
 from urllib.parse import urlparse
+import traceback
 
 HERE = os.path.dirname(__file__)
-READIES = os.path.abspath(os.path.join(HERE, "../../readies"))
+READIES = os.path.abspath(os.path.join(HERE, "../readies"))
 sys.path.insert(0, READIES)
 import paella  # noqa: F401
 
 RLEC_LATEST_VERSION = "6.0.20"
 RLEC_LATEST_BUILD = "97"
 RLEC_INTERNAL_MASTER_BUILD = 2500
+
+#----------------------------------------------------------------------------------------------
+
+T0 = time.monotonic()
+
+def report_elapsed():
+    print(f"Elapsed: {datetime.timedelta(seconds=time.monotonic() - T0)}")
+
+#----------------------------------------------------------------------------------------------
+
+def newdict(d, d2):
+    d1 = d.copy()
+    d1.update(d2)
+    return d1
 
 #----------------------------------------------------------------------------------------------
 
@@ -107,5 +123,10 @@ class Container:
 
     def stop(self):
         pass
+
+#----------------------------------------------------------------------------------------------
+
+class Error(Exception):
+    pass
 
 #----------------------------------------------------------------------------------------------

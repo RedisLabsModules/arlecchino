@@ -2,9 +2,11 @@
 ''''[ ! -z $VIRTUAL_ENV ] && exec /opt/redislabs/bin/python -O -u -- "$0" ${1+"$@"}; command -v /opt/redislabs/bin/python3 > /dev/null && exec /opt/redislabs/bin/python3 -O -u -- "$0" ${1+"$@"}; exec /opt/redislabs/bin/python2 -O -u -- "$0" ${1+"$@"} # '''
 
 try:
+    # rlec 5.6+
     from cnm import CCS
     from cnm.cli import rladmin
 except:
+    # rlec 5.4
     import sys
     sys.path.insert(0, "/opt/redislabs/lib/cnm") 
     sys.path.insert(0, "/opt/redislabs/lib/cnm/python") 

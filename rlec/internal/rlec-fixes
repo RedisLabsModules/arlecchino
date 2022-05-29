@@ -6,26 +6,16 @@ PROGNAME="${BASH_SOURCE[0]}"
 HERE="$(cd "$(dirname "$PROGNAME")" &>/dev/null && pwd)"
 view=$(cd $HERE/../../.. && pwd)
 
-ln -sf $view /opt/view
+[[ ! -e /opt/view ]] && ln -sf $view /opt/view
 [[ ! -e /opt/readies ]] && ln -s /opt/view/arlecchino/readies /opt/readies
 READIES=/opt/readies
 . $READIES/shibumi/defs
 
-[[ -e /opt/view/rlec/DEBUG ]] && DEBUG=1
+#----------------------------------------------------------------------------------------------
 
-if [[ $PROLOG == 1 && $DEBUG == 1 ]]; then
-	$READIES/bin/getget
+patch_cmn() {
+	[[ ! -d /opt/view/rlec/cnm-$CNM_VER ]] && return
 
-	echo "Installing bashdb..."
-	$READIES/bin/getbashdb
-	exit 0
-fi
-
-if [[ -e /opt/view/rlec/NOPATCH ]]; then
-	NO_PATCH=1
-fi
-
-if [[ $NO_PATCH != 1 && -d /opt/view/rlec/cnm-$CNM_VER ]]; then
 	echo "Patching CNM..."
 	/opt/redislabs/bin/python $HERE/sync-cnm.py cnm-$CNM_VER
 
@@ -38,23 +28,35 @@ if [[ $NO_PATCH != 1 && -d /opt/view/rlec/cnm-$CNM_VER ]]; then
 	echo "Waiting for services..."
 	$HERE/wait-for-service rlec_supervisord
 	[[ $NO_INTERNET != 1 ]] && sleep 5
+}
+
+[[ -e /opt/view/rlec/DEBUG ]] && DEBUG=1
+
+#----------------------------------------------------------------------------------------------
+
+if [[ $PROLOG == 1 && $DEBUG == 1 ]]; then
+	$READIES/bin/getget
+
+	echo "Installing bashdb..."
+	$READIES/bin/getbashdb
+	exit 0
 fi
+
+#----------------------------------------------------------------------------------------------
+
+[[ -e /opt/view/rlec/NOPATCH ]] && NO_PATCH=1
+
+[[ $NO_PATCH != 1 ]] && patch_cmn
 
 [[ $NO_INTERNET == 1 ]] && exit 0
 
-if [[ ! -z $(command -v apt-get) ]]; then
+if is_command apt-get; then
 	echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
 fi
 
 export PYTHONWARNINGS='ignore:DEPRECATION::pip._internal.cli.base_command'
 
-[[ $DEBUG != 1 ]] && $READIES/bin/getget
-
-if is_command apt-get; then
-	runn apt-get install -o=Dpkg::Use-Pty=0 -y jq
-else
-	runn yum install -y jq
-fi
+# [[ $DEBUG != 1 ]] && $READIES/bin/getget
 
 echo "Installing pip..."
 PYTHON_VER="$(python --version 2>&1 | awk '{print $2}' | cut -d. -f1)"
@@ -66,35 +68,33 @@ else
 fi
 runn /opt/redislabs/bin/python -m pip install yq
 
-if [[ $DEBUG == 1 ]]; then
-	echo "Installing bashdb..."
-	$READIES/bin/getbashdb
-
-	echo "Installing pudb..."
-	if [[ $PYTHON_VER == 2 ]]; then
-		NO_PY3=1 $READIES/bin/getpudb
-	else
-		NO_PY2=1 $READIES/bin/getpudb
-	fi
-	if [[ ! -f /opt/redislabs/.config/pudb/pudb.cfg ]]; then
-		mkdir -p /opt/redislabs/.config/pudb
-		cp -R /root/.config/pudb/pudb.cfg /opt/redislabs/.config/pudb
-		chown -R redislabs:redislabs /opt/redislabs/.config/pudb
-	fi
-
-	echo "Debugging is enalbed: installing  mc htop tmux..."
-	if is_command apt-get; then
-		runn apt-get install -y mc htop tmux
-	else
-		runn yum install -y mc htop tmux
-	fi
+echo "Installing packages..."
+if is_command apt-get; then
+	runn apt-get install -y -o=Dpkg::Use-Pty=0 mc htop tmux jq
+elif is_command yum; then
+	runn yum install -y mc htop tmux jq
 fi
 
-# echo "Installing packages..."
-if [[ ! -z $(command -v apt-get) ]]; then
-	:
-	# apt-get -qq install -y mc htop tmux 2>&1 > /tmp/apt.log
+#----------------------------------------------------------------------------------------------
+
+[[ $DEBUG != 1 ]] && exit 0
+
+echo "Installing pudb..."
+if [[ $PYTHON_VER == 2 ]]; then
+	NO_PY3=1 $READIES/bin/getpudb
 else
-	:
-	# yum -q install -y mc htop tmux 2>&1 > /tmp/install.log
+	NO_PY2=1 $READIES/bin/getpudb
+fi
+if [[ ! -f /opt/redislabs/.config/pudb/pudb.cfg ]]; then
+	mkdir -p /opt/redislabs/.config/pudb
+	cp -R /root/.config/pudb/pudb.cfg /opt/redislabs/.config/pudb
+	chown redislabs:redislabs /opt/redislabs/.config
+	chown -R redislabs:redislabs /opt/redislabs/.config/pudb
+fi
+
+echo "Installing gdb..."
+if is_command apt-get; then
+	runn apt-get install -y gdb gdbserver
+elif is_command yum; then
+	runn yum install -y gdb gdbserver
 fi

@@ -36,8 +36,8 @@ update_arlecchino() {
 	if [[ $UPDATE == 0 ]]; then
 		return
 	fi
+	local flast=$RLEC/rlec/.last-pull
 	if [[ $UPDATE != 1 ]]; then
-		local flast=$RLEC/rlec/.last-pull
 		if [[ -f $flast && $flast -nt 1 ]]; then
 			return
 		fi

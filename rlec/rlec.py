@@ -63,14 +63,13 @@ class RLEC:
             version = docker_spec["version"]
             build = docker_spec["build"]
         else:
+            ver_build = ''
             if osnick is None:
                 osnick = 'bionic'
             if version is None:
                 version = RLEC_LATEST_INT_VERSION if internal else RLEC_LATEST_VERSION
-                ver_build = ''
             elif version == 'master':
                 version = RLEC_INT_BUILDS[version]['version']
-                ver_build = ''
                 internal = True
             else:
                 fullver = version
@@ -78,7 +77,7 @@ class RLEC:
                     version, ver_build = fullver.split('-')
                 except:
                     ver_build = ''
-            if build is None:
+            if build is None or build == '':
                 if ver_build != '':
                     build = ver_build
                 else:
@@ -91,7 +90,7 @@ class RLEC:
                         pass
                     if build == '':
                         raise Error(f"cannot determine build number for version={fullver}")
-            elif build != '' and build != ver_build:
+            elif ver_build != '' and build != ver_build:
                 raise Error(f"conflicting build specs: version={fullver} build={build}")
 
             try:

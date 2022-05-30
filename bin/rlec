@@ -91,7 +91,7 @@ if [[ ! -d $RLEC/rlec ]]; then
 	chmod 777 $RLEC/rlec
 fi
 
-if [[ "$*" == *"--update"* ]]; then
+if [[ $UPDATE != 0 && "$*" == *"--update"* ]]; then
 	UPDATE=1
 fi
 

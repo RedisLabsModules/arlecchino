@@ -17,6 +17,8 @@ RLEC_CLUSTER_NAME = "rlec1"
 RLEC_USER = "a@a.com"
 RLEC_PWD = "a"
 
+MAX_MODULE_SIZE_MB=30
+
 output = ""
 
 #----------------------------------------------------------------------------------------------
@@ -41,6 +43,11 @@ def try_bootstrap(args):
             latest_redis = paella.sh('ls /opt/redislabs/bin/redis-server-* | grep -E "redis-server-[0-9]+\.[0-9]+$" | cut -d- -f3 | sort -V -r | head -1')
             paella.sh("rladmin tune cluster redis_upgrade_policy latest")
             paella.sh("rladmin tune cluster default_redis_version {ver}".format(ver=latest_redis))
+        except:
+            pass
+
+        try:
+            paella.sh("ccs-cli hset cluster module_upload_max_size_mb {MB}".format(MB=MAX_MODULE_SIZE_MB))
         except:
             pass
 

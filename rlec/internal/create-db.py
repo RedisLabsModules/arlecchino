@@ -34,6 +34,7 @@ parser.add_argument('-f', '--filename', type=str, default='db1.yml', help='Datab
 parser.add_argument('--sparse', action="store_true", help="Sparse shard placement")
 parser.add_argument('--replication', action="store_true", help="Enable replication")
 parser.add_argument('--flash', type=str, help="Enable Radis on Flash of given size")
+parser.add_argument('--modules', type=str, help='File specifying modules with arguments for loading')
 parser.add_argument('--no-modules', action="store_true", help="Do not install modules")
 parser.add_argument('--verbose', action="store_true", help='Show output of all commands')
 args = parser.parse_args()
@@ -144,7 +145,7 @@ bdb:
 # data_persistence: snapshot
   aof_policy: appendfsync-always
   hash_slots_policy: 16k
-  {{modules_defs_yml}}
+  {{modules_defs}}
   {{flash_defs}}
 # {{recovery_plan}}
 '''

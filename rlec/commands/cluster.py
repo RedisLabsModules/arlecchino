@@ -15,7 +15,7 @@ from ..node import Node
 @click.option('-i', '--internal', is_flag=True, default=None, help='Use RLEC internal builds')
 @click.option('-n', '--nodes', type=int, default=1, help='Number of nodes')
 @click.option('-s', '--shards', type=int, default=3, help='Number of shards')
-@click.option('-d', '--dbname', type=str, default='db1', help='Database name')
+@click.option('-d', '--dbname', type=str, default='db', help='Database name')
 @click.option('-m', '--memory', type=str, default='1g', help='Memory (RAM)')
 @click.option('--sparse', is_flag=True, help="Use sparse shard placement")
 @click.option('--replication', is_flag=True, help="Enable replication")

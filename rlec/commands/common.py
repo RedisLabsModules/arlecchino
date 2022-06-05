@@ -73,7 +73,7 @@ redis-modules.yml  Redis modules for installation
 
 Output files:
 RLEC      Docker ID of master node
-db1.yml   Database attributes
+db.yml    Database attributes
 
 Variables:
 RLEC          Root of RLEC view

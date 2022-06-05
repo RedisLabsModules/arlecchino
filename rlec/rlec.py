@@ -248,11 +248,13 @@ class RLEC:
             return
         Cluster().stop()
 
-    def create_db(self, name='db1', shards=3, memory='1g', sparse=False, replication=False, flash=None, no_modules=False):
+    def create_db(self, name='db', shards=3, memory='1g', sparse=False, replication=False, 
+                  flash=None, modules_file=None, no_modules=False):
         cluster = self.cluster()
         if cluster is None:
             return
-        cluster.create_db(name=name, shards=shards, memory=memory, sparse=sparse, replication=replication, flash=flash, no_modules=no_modules)
+        cluster.create_db(name=name, shards=shards, memory=memory, sparse=sparse, replication=replication, 
+                          flash=flash, modules_file=modules_file, no_modules=no_modules)
 
     #------------------------------------------------------------------------------------------
 
@@ -290,7 +292,7 @@ class RLEC:
                 vars['VERBOSE'] = '1'
             env_vars = " ".join([f'{n}="{str(v)}"' for n, v in vars.items()])
 
-            cmd = f"docker exec {uid_arg} -it {cid} bash -c '{env_vars} {cmd}'"
+            cmd = f"docker exec {uid_arg} -it {cid} bash -c '{env_vars} {cmd}; exit $?'"
             if self.verbose:
                 print(f"Executing: {cmd}")
             if to_log or retout:

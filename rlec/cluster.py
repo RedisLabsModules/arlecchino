@@ -43,13 +43,13 @@ class Cluster(object):
                 return
 
             vars = {'NODE_NUM': node.num}
-            # if debug:
-            #     vars['BB'] = '1'
             BB()
             if rlec.iexec("create-cluster.py", num=1, uid=0, vars=vars, to_log=True, to_con=True) != 0:
                 raise RuntimeError("failed to create cluster")
 
             print("Cluster created.")
+            
+            paella.fwrite(f"{rlec.rlec_dir}/DBID", '0')
 
             if sh(f'{READIES}/bin/isec2') == 'no':
                 dhost = DockerHost().host
@@ -77,7 +77,14 @@ class Cluster(object):
     #------------------------------------------------------------------------------------------
 
     def install_modules(self):
-        if self.rlec.iexec("deploy-modules", num=1, to_log=True, to_con=True) != 0:
+        if os.path.exists(f"{self.rlec.rlec_dir}/redis-modules.yml"):
+            yaml_file = 'redis-modules.yml'
+        elif os.path.exists(f"{self.rlec.rlec_dir}/redis-modules.yaml"):
+            yaml_file = 'redis-modules.yaml'
+        else:
+            raise RuntimeError("cannot locate redis-modules.yml")
+        if self.rlec.iexec("install-modules.py --yaml /opt/view/rlec/{YAML} --modinfo /opt/view/rlec/modules.json".format(YAML=yaml_file),
+                            num=1, to_log=True, to_con=True) != 0:
             raise RuntimeError("failed to create cluster")
 
     def stop(self):
@@ -90,6 +97,8 @@ class Cluster(object):
         print(f"Stopping node 1 ...")
         Node().stop()
         print(f"Node stopped.")
+
+    #------------------------------------------------------------------------------------------
 
     def nodes_info_by_ip(self, ip=None):
         rlec = self.rlec
@@ -139,28 +148,37 @@ class Cluster(object):
         else:
             raise RuntimeError(f"Node {node.num}: failed to remove from cluster")
 
-    def create_db(self, name='db1', shards=3, memory='1g', sparse=False, replication=False, flash=None, no_modules=False):
+    #------------------------------------------------------------------------------------------
+
+    def create_db(self, name='db', shards=3, memory='1g', sparse=False, replication=False, flash=None, 
+                  modules_file=None, no_modules=False):
         try:
             rlec = self.rlec
             sparse_arg = "--sparse" if sparse else ""
             repl_arg = "--replication" if replication else ""
             flash_arg = f"--flash {flash}" if flash is not None else ""
             no_modules_arg = f"--no-modules" if no_modules else ""
-            # vars = {'BB': '1'}
             vars = {}
-            if rlec.iexec(f"create-db.py --name={name} --shards={shards} --memory={memory} {sparse_arg} {repl_arg} {flash_arg} {no_modules_arg}",
-                          num=1, vars=vars, to_log=True, to_con=True) == 0:
-                rlec.iexec("rediscli-info.py", num=1, uid=0, to_log=True, to_con=False)
-            # print(f"Done.")
+            db_id = int(paella.fread(f"{rlec.rlec_dir}/DBID")) + 1
+            name = f"{name}-{db_id}"
+            if rlec.iexec((f"create-db.py --id={db_id} --name={name} --shards={shards} --memory={memory} "
+                           f"{sparse_arg} {repl_arg} {flash_arg} {no_modules_arg}"),
+                          num=1, vars=vars, to_log=True, to_con=True) != 0:
+                raise RuntimeError(f"Cannot create database: {name}")
+            paella.fwrite(f"{rlec.rlec_dir}/DBID", str(db_id))
+            rlec.iexec("rediscli-info.py", num=1, uid=0, to_log=True, to_con=False)
+            print(f"Created BDB {name} [port {12000 + db_id - 1}]")
         except Exception as x:
-            raise RuntimeError(f"Cannot create database: {str(x)}")
+            raise RuntimeError(f"Cannot create database: {x}")
 
-    def drop_db(slef, name="db1"):
+    def drop_db(slef, id=0, name="db"):
         pass
         #try:
         #    rlec.iexec(f"drop-db.py --name={name}", num=1, to_log=True, to_con=True) == 0:
         #except Exception as x:
         #    raise RuntimeError(f"Cannot drop database: {str(x)}")
+
+    #------------------------------------------------------------------------------------------
 
     def fetch_logs(self):
         Node(num=1).fetch_logs()

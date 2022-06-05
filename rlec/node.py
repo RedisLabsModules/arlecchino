@@ -39,7 +39,7 @@ class Node:
             vol = f"-v {rlec.rlec_view_root}:/v"
 
             k = num - 1
-            ports = f"-p {8443+k}:8443 -p {9443+k}:9443 -p {12000+k}:12000"
+            ports = f"-p {8443+k}:8443 -p {9443+k}:9443 -p {12000+k*1000}-{12999+k*1000}:12000-12999"
 
             rlec.log(f"Creating from {rlec.docker_image}", new=True)
             debug_opt = "--privileged --ulimit core=-1 --security-opt seccomp=unconfined"

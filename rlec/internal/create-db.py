@@ -27,10 +27,11 @@ rlec_version = paella.Version(cnm_config.cnm_version)
 #----------------------------------------------------------------------------------------------
 
 parser = argparse.ArgumentParser(description='Create database')
-parser.add_argument('-n', '--name', type=str, default='db1', help='Name of database')
+parser.add_argument('--id', type=int, default=1, help='ID of database')
+parser.add_argument('-n', '--name', type=str, default='db', help='Name of database')
 parser.add_argument('-m', '--memory', type=str, default='1g', help='Amount of RAM (default: 1g/1024m)')
 parser.add_argument('-s', '--shards', type=int, default=1, help='Number of shards')
-parser.add_argument('-f', '--filename', type=str, default='db1.yml', help='Database parameters filename')
+parser.add_argument('-f', '--filename', type=str, default='db.yml', help='Database parameters filename')
 parser.add_argument('--sparse', action="store_true", help="Sparse shard placement")
 parser.add_argument('--replication', action="store_true", help="Enable replication")
 parser.add_argument('--flash', type=str, help="Enable Radis on Flash of given size")
@@ -82,6 +83,9 @@ def meld(template):
 
 print("\nCreating database...")
 
+db_id = args.id
+port = 12000 + db_id - 1
+
 if args.shards > 1:
     sharding = 'true'
     shards = args.shards
@@ -111,7 +115,7 @@ shards_placement = 'sparse' if args.sparse else 'dense'
 
 v1_fields_t = r'''
 name: {{args.name}}
-port: 12000
+port: {{port}}
 memory_size: {{mem_bytes}}
 sharding: {{sharding}}
 shards_count : {{shards}}
@@ -131,7 +135,7 @@ hash_slots_policy: 16k
 v2_fields_t = r'''
 bdb:
   name: {{args.name}}
-  port: 12000
+  port: {{port}}
   memory_size: {{mem_bytes}}
   sharding: {{sharding}}
   shards_count: {{shards}}
@@ -164,7 +168,7 @@ recovery_plan:
   data_files:
     - shard_slots: 0-16383
       node_uid: 1
-      filename: /opt/view/rlec/in/db1-1-1.aof
+      filename: /opt/view/rlec/in/db-1-1.aof
 '''
 
 if rlec_version < paella.Version('6.0.8'):

@@ -89,6 +89,7 @@ fi
 if [[ ! -d $RLEC/rlec ]]; then
 	mkdir $RLEC/rlec
 	chmod 777 $RLEC/rlec
+	chmod g+s $RLEC/rlec
 fi
 
 if [[ $UPDATE != 0 && "$*" == *"--update"* ]]; then

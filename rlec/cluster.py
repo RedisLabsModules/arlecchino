@@ -139,15 +139,16 @@ class Cluster(object):
         else:
             raise RuntimeError(f"Node {node.num}: failed to remove from cluster")
 
-    def create_db(self, name='db1', shards=3, memory='1g', sparse=False, replication=False, flash=None):
+    def create_db(self, name='db1', shards=3, memory='1g', sparse=False, replication=False, flash=None, no_modules=False):
         try:
             rlec = self.rlec
             sparse_arg = "--sparse" if sparse else ""
             repl_arg = "--replication" if replication else ""
             flash_arg = f"--flash {flash}" if flash is not None else ""
+            no_modules_arg = f"--no-modules" if no_modules else ""
             # vars = {'BB': '1'}
             vars = {}
-            if rlec.iexec(f"create-db.py --name={name} --shards={shards} --memory={memory} {sparse_arg} {repl_arg} {flash_arg}",
+            if rlec.iexec(f"create-db.py --name={name} --shards={shards} --memory={memory} {sparse_arg} {repl_arg} {flash_arg} {no_modules_arg}",
                           num=1, vars=vars, to_log=True, to_con=True) == 0:
                 rlec.iexec("rediscli-info.py", num=1, uid=0, to_log=True, to_con=False)
             # print(f"Done.")

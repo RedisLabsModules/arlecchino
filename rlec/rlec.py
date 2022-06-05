@@ -177,8 +177,8 @@ class RLEC:
 
     def log(self, text, num=1, new=False):
         paella.fwrite(f"{self.node_log(num)}", f"{text}\n", mode="w" if new else "a+")
-        if self.verbose:
-            print(text)
+        # if self.verbose:
+        #     print(text)
 
     def fetch_logs(self):
         Cluster(rlec=self).fetch_logs()
@@ -248,11 +248,11 @@ class RLEC:
             return
         Cluster().stop()
 
-    def create_db(self, name='db1', shards=3, memory='1g', sparse=False, replication=False, flash=None):
+    def create_db(self, name='db1', shards=3, memory='1g', sparse=False, replication=False, flash=None, no_modules=False):
         cluster = self.cluster()
         if cluster is None:
             return
-        cluster.create_db(name=name, shards=shards, memory=memory, sparse=sparse, replication=replication, flash=flash)
+        cluster.create_db(name=name, shards=shards, memory=memory, sparse=sparse, replication=replication, flash=flash, no_modules=no_modules)
 
     #------------------------------------------------------------------------------------------
 

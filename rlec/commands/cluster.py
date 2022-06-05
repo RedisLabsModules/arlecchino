@@ -52,7 +52,7 @@ def start(**kwargs):
                 rlec.install_modules()
             if not args.no_db:
                 rlec.create_db(name=args.dbname, shards=args.shards, memory=args.memory, sparse=args.sparse, 
-                               replication=args.replication, flash=args.flash)
+                               replication=args.replication, flash=args.flash, no_modules=args.no_modules)
         rlec.fetch_logs()  # TODO: call fetch_logs after each operation, internally
     except Error as x:
         eprint(f"Error: {x}")

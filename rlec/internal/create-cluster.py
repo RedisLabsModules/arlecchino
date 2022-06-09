@@ -33,6 +33,8 @@ def try_bootstrap(args):
         cmd = ['/opt/redislabs/bin/rladmin', 'cluster', 'create', 
                'name', RLEC_CLUSTER_NAME, 
                'username', RLEC_USER, 'password', RLEC_PWD]
+        if os.path.exists('/opt/view/rlec/LICENSE'):
+            cmd += ['license_file', '/opt/view/rlec/LICENSE']
         if flash:
              cmd += ['flash_enabled', 'flash_path', '/var/opt/redislabs/flash']
         output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)

@@ -17,7 +17,7 @@ RLEC_CLUSTER_NAME = "rlec1"
 RLEC_USER = "a@a.com"
 RLEC_PWD = "a"
 
-MAX_MODULE_SIZE_MB=30
+MAX_MODULE_SIZE_MB=200
 
 output = ""
 

@@ -38,12 +38,16 @@ RLEC_BUILDS = {
 }
 
 RLEC_INT_BUILDS = {
-    'master': { 'version': '100.0.0', 'build': '2799' },
-    '100.0.0': { 'build': '2799' },
-    '6.2.12': { 'build': '17' },
-    '6.2.10': { 'build': '83' },
+    'master': { 'version': '100.0.0', 'build': '2988' },
+    '100.0.0': { 'build': '2988' },
+    '6.4.2': { 'build': '8' },
+    '6.4.0': { 'build': '48' },
+    '6.2.18': { 'build': '49' },
+    '6.2.12': { 'build': '82' },
+    '6.2.10': { 'build': '129' },
     '6.2.8': { 'build': '53' },
     '6.2.4': { 'build': '54' },
+    '6.4.2': { 'build': '8' },
     '6.0.20': { 'build': '101' },
     '6.0.12': { 'build': '58' },
     '6.0.10': { 'build': '107' },
@@ -55,6 +59,7 @@ RLEC_OS = {
     'trusty': 'trusty',
     'xenial': 'xenial',
     'bionic': 'bionic',
+    'focal': 'focal',
     'centos7': 'rhel7',
     'centos8': 'rhel8'
 }

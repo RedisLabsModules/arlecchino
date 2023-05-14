@@ -19,10 +19,10 @@ if [[ -d arlecchino ]]; then
 else
     echo "Cloning arlecchino ..."
     if ! git clone --quiet --recursive ssh://git@github.com/RedisLabsModules/arlecchino.git; then
-		if ! git clone --quiet --recursive https://github.com/RedisLabsModules/arlecchino.git; then
-			>&2 echo "arlecchino: clone failed"
-			exit 1
-		fi
+        if ! git clone --quiet --recursive https://github.com/RedisLabsModules/arlecchino.git; then
+            >&2 echo "arlecchino: clone failed"
+            exit 1
+        fi
     fi
     cd arlecchino
 fi
